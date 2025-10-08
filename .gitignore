@@ -1,0 +1,72 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+
+# Misc
+.DS_Store
+
+# Environment Variables - NEVER COMMIT THESE!
+.env
+.env.local
+.env.production
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+logs/
+*.log.*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj*
+*.sln
+*.sw?
+
+# Security - CRITICAL!
+*.pem
+*.key
+*.crt
+.cert/
+security-report.json
+security-audit-report.json
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+.cache/
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# PM2
+.pm2/
+pm2-*.log
+
+# Backups
+*.backup
+*.bak
+backups/
+
+# Package manager
+bun.lockb
+.yarn/
+.pnp.*
