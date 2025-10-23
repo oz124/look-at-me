@@ -147,7 +147,7 @@ const faqData = [
   {
     question: 'איך יוצרים קשר לתמיכה?',
     answer:
-      "ניתן ליצור קשר דרך המייל support@lookatme.ai או דרך הצ'אט בתוך האפליקציה. אנו זמינים 24/7.",
+      "ניתן ליצור קשר דרך המייל marketing@lookatme.site או דרך הצ'אט בתוך האפליקציה. אנו זמינים 24/7.",
   },
 ];
 
@@ -306,177 +306,277 @@ const TermsModal = ({ isOpen, onClose }) => {
           <div className='space-y-6 text-gray-700 leading-relaxed'>
             <div className='bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6'>
               <p className='text-blue-800 text-sm'>
-                <strong>תאריך עדכון אחרון:</strong> 1 בינואר 2025 |{' '}
-                <strong>תאריך תחילת תוקף:</strong> 1 בינואר 2025
+                <strong>תאריך עדכון אחרון:</strong> 1 בינואר 2025
               </p>
             </div>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                1. הגדרות ומונחים
+                תנאי שירות
               </h3>
-              <div className='space-y-2'>
-                <p>
-                  <strong>"החברה"</strong> - Look At Me Ltd.
-                </p>
-                <p>
-                  <strong>"השירות"</strong> - פלטפורמת Look At Me לניתוח תוכן
-                  באמצעות בינה מלאכותית
-                </p>
-                <p>
-                  <strong>"המשתמש"</strong> - כל אדם או גוף המשתמש בשירות
-                </p>
-                <p>
-                  <strong>"התוכן"</strong> - כל חומר דיגיטלי המועלה לשירות
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                2. קבלת התנאים
-              </h3>
-              <p>
-                השימוש בשירות מהווה הסכמה מלאה לתנאים אלו. אם אינך מסכים לתנאים,
-                נא הפסק את השימוש בשירות מיידית.
+              <p className='mb-4'>
+                תנאי שירות אלה, כפי שיעודכנו מעת לעת, ("התנאים") מהווים הסכם מחייב מבחינה משפטית בין Look At Me Ltd., חברה ישראלית, או במידה שמוגדר בטופס הזמנה, הסניף הרלוונטי שלה ("אנחנו", "שלנו", "אנו", "החברה" ו"טופס ההזמנה", בהתאמה) לבין המשתמש המקבל תנאים אלה ("הלקוח"). תנאים אלה מסדירים את האופן שבו הלקוח ומשתמשיו (כפי שמוגדר להלן) רשאים להשתמש ולגשת לפלטפורמת השיווק החכמה המונעת בינה מלאכותית של החברה הזמינה דרך האתר של החברה או כל שירותים אחרים המוצעים דרך הפלטפורמה ("הפלטפורמה" ו"האתר" בהתאמה), הניתנים במודל מנוי Software-as-a-Service.
               </p>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                3. תיאור השירות
-              </h3>
-              <p>
-                Look At Me מספקת פלטפורמה מבוססת בינה מלאכותית לניתוח תוכן
-                דיגיטלי ויצירת קמפיינים שיווקיים. השירות כולל:
+              
+              <p className='mb-4'>
+                השימוש בפלטפורמה על ידי הלקוח מהווה קבלה של תנאים אלה. אם משתמש מקבל את התנאים בשם ישות אחרת, עליו להיות בעל הסמכות לקבל תנאים אלה בשמה.
               </p>
-              <ul className='list-disc pr-6 mt-2 space-y-1'>
-                <li>ניתוח אוטומטי של תמונות, וידאו ותוכן טקסטואלי</li>
-                <li>יצירת המלצות שיווקיות מותאמות אישית</li>
-                <li>אופטימיזציה לפלטפורמות שיווק שונות</li>
-                <li>דוחות ואנליטיקות מתקדמות</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                4. זכויות ואחריות המשתמש
-              </h3>
-              <div className='space-y-3'>
-                <div>
-                  <h4 className='font-semibold text-gray-800'>
-                    4.1 התחייבויות המשתמש:
-                  </h4>
-                  <ul className='list-disc pr-6 mt-1 space-y-1'>
-                    <li>מתן מידע מדויק ומעודכן</li>
-                    <li>שמירה על סודיות פרטי החשבון</li>
-                    <li>שימוש בשירות בהתאם לחוק ולתנאים אלו</li>
-                    <li>אחריות מלאה לתוכן המועלה לשירות</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className='font-semibold text-gray-800'>
-                    4.2 איסורי שימוש:
-                  </h4>
-                  <ul className='list-disc pr-6 mt-1 space-y-1'>
-                    <li>העלאת תוכן פוגעני, לא חוקי או מפר זכויות יוצרים</li>
-                    <li>ניסיון לפרוץ או לפגוע במערכת</li>
-                    <li>שימוש אוטומטי או בוטים ללא אישור</li>
-                    <li>העברת החשבון לצד שלישי ללא אישור</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                5. תנאי התשלום
-              </h3>
-              <div className='space-y-2'>
-                <p>
-                  <strong>5.1</strong> התעריפים מפורסמים באתר ועשויים להשתנות
-                  בהודעה מוקדמת של 30 יום.
-                </p>
-                <p>
-                  <strong>5.2</strong> התשלום מתבצע מראש לכל תקופת מנוי.
-                </p>
-                <p>
-                  <strong>5.3</strong> ביטול מנוי יכנס לתוקף בתום התקופה ששולמה.
-                </p>
-                <p>
-                  <strong>5.4</strong> אין החזר כספי למנויים שבוטלו באמצע
-                  התקופה.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                6. זכויות יוצרים וקניין רוחני
-              </h3>
-              <div className='space-y-2'>
-                <p>
-                  <strong>6.1</strong> כל הזכויות בשירות שמורות לחברה.
-                </p>
-                <p>
-                  <strong>6.2</strong> המשתמש מעניק רישיון לחברה לעיבוד התוכן
-                  לצורך מתן השירות.
-                </p>
-                <p>
-                  <strong>6.3</strong> התוצרים שנוצרים על ידי הבינה המלאכותית
-                  שייכים למשתמש.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                7. הגבלת אחריות
-              </h3>
-              <div className='bg-yellow-50 p-4 rounded-lg border border-yellow-200'>
+              
+              <div className='bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-4'>
                 <p className='text-yellow-800 text-sm'>
-                  <strong>הודעה חשובה:</strong> השירות מסופק "כמו שהוא" ללא
-                  אחריות מכל סוג. החברה לא תהיה אחראית לנזקים עקיפים, תוצאתיים
-                  או מיוחדים.
+                  <strong>הערה:</strong> תנאים אלה מכילים הוראה ליישוב סכסוכים ובוררות, כולל ויתור על תביעה ייצוגית המשפיע על זכויותיך תחת תנאים אלה ובקשר לסכסוכים שעלולים להיות לך עם החברה. אתה רשאי לבחור שלא להשתתף בבוררות האישית המחייבת כפי שמפורט להלן.
                 </p>
               </div>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                8. סיום השירות
+                הפלטפורמה; זכות גישה ושימוש
               </h3>
-              <p>
-                החברה רשאית להפסיק את השירות או לחסום משתמש בהודעה מוקדמת של 30
-                יום או מיידית במקרה של הפרת התנאים.
+              
+              <div className='space-y-4'>
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    זכות שימוש
+                  </h4>
+                  <p>
+                    בכפוף לעמידת הלקוח בתנאים ובתנאים הכלולים בתנאים אלה, החברה, במהלך תקופת המנוי הרלוונטית (כפי שמוגדר להלן), מעניקה בזה ללקוח ולמשתמשיו, אם חל, זכות מוגבלת, לא בלעדית ולא ניתנת להעברה לגשת ולהשתמש בפלטפורמה בהתאם לתיעוד והמדריכים החלים ("מסמכי החברה") ובכל מקרה אך ורק לשימוש עסקי פנימי של הלקוח ולא לספק שירותים לכל אדם או ישות אחרת.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    שינוי או הפסקת הפלטפורמה
+                  </h4>
+                  <p>
+                    החברה רשאית לשנות או לעדכן את הפלטפורמה והאתר (וכל שירותים הניתנים בהם) בכל עת, כולל, ללא הגבלה, זמינות כל תכונה, תוכן או מסד נתונים, ורשאית להטיל מגבלות או הגבלות על תכונות ושירותים מסוימים או להפסיק כל חלק או כל חלק מהפלטפורמה או האתר עם או בלי הודעה מוקדמת.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    שימוש ומגבלות אשראי
+                  </h4>
+                  <p>
+                    השימוש של הלקוח בפלטפורמה עשוי להיות כפוף למגבלות שימוש, כולל מספר מקסימלי של משתמשים ומספר מקסימלי של הודעות ואשראי אינטגרציה, בהתאם לתוכנית המנוי שנבחרה על ידי הלקוח בדף המחירים או בטופס ההזמנה. החברה רשאית לשנות מגבלות כאלה מעת לעת על ידי הודעה או עדכון לדף המחירים.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+                משתמשים, חשבונות והתחייבויות הלקוח
+              </h3>
+              
+              <div className='space-y-4'>
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    משתמשים וחשבונות
+                  </h4>
+                  <p className='mb-3'>
+                    על מנת להשתמש בפלטפורמה, הלקוח חייב לרשום וליצור חשבון ("חשבון"), עבור כל משתמש מורשה ומיועד על ידי הלקוח כמשתמש בפלטפורמה תחת חשבון הלקוח (כל אחד, "משתמש"). משתמשים חייבים להיות בני לפחות שלוש עשרה (13) שנים, או שש עשרה (16) שנים אם אתה אדם באיחוד האירופי (EU), או הגיל המינימלי הנדרש בסמכות השיפוט של הלקוח להשתמש או להסכים לשימוש בפלטפורמה.
+                  </p>
+                  
+                  <p className='mb-3'>
+                    הלקוח אחראי לספק לחברה מידע רישום מדויק, מלא ומעודכן עבור כל משתמש. הלקוח י: (א) לא יאפשר לאף אחד מלבד משתמשים לגשת ולהשתמש בחשבון; (ב) לא ירשום חשבון באמצעים אוטומטיים; (ג) ישמור ויוודא שמשתמשים שומרים על כל פרטי החשבון ואמצעי הגישה מאובטחים בכל עת; (ד) יוודא שפרטי הכניסה לכל משתמש יכולים לשמש רק על ידי אותו משתמש, ושמספר אנשים לא יכולים לחלוק את אותם פרטי כניסה; ו-(ה) יודיע לחברה בכתב מיד אם הלקוח מודע לכל גישה או שימוש לא מורשה בחשבון הלקוח.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    שיתוף פעולה
+                  </h4>
+                  <p>
+                    הלקוח יספק לחברה את כל שיתוף הפעולה הסביר בקשר לתנאים אלה, ויעמוד באופן יעיל ובזמן, ויהיה אחראי ואשם לעמידת המשתמשים בתנאים אלה ובכל החוקים והתקנות החלים.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    אחריות לנתוני הלקוח
+                  </h4>
+                  <p>
+                    הלקוח מייצג ומתחייב כי (א) הוא הבעלים או יש לו את כל הרישיונות, זכויות, הסכמות, אישורים, הרשאות, כוח וסמכות הנדרשים להעניק לחברה את הזכות והרישיון תחת הסעיף "רישיון לנתוני הלקוח" ולשתף את נתוני הלקוח עם הפלטפורמה, ללא הפרה או הפרה של זכויות יוצרים, זכויות פרטיות, זכויות פרסום, סימני מסחר או כל חוזי, קניין רוחני או קנייני אחר של צד שלישי כלשהו.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+                מנוי; תשלומים
+              </h3>
+              
+              <div className='space-y-4'>
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    אגרות
+                  </h4>
+                  <p>
+                    בתמורה למנוי, זכויות הלקוח והתחייבויות החברה כאן, הלקוח ישלם לחברה את האגרות החלות בהתבסס על התוכנית שנבחרה ("האגרות"). אלא אם כן מצוין במפורש אחרת, האגרות נאמרות בדולרים אמריקאיים. הלקוח מסמיך בזה את החברה, ישירות או דרך שירותי עיבוד התשלומים של החברה או הסוכן או השוק החלים, לחייב את האגרות דרך אמצעי התשלום שנבחר על ידי הלקוח, עבור כל תקופת חידוש. האגרות אינן ניתנות לביטול ואינן ניתנות להחזר.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    מסים
+                  </h4>
+                  <p>
+                    האגרות אינן כוללות כל מס (כולל, ללא הגבלה, מס ערך מוסף, מס מכירות, מס שימוש, אקסייז, מס סחורות ושירותים, וכו'), היטלים או מכס, למעט מס הכנסה המוטל על החברה. החברה תחייב מס על גבי האגרות אם החברה נדרשת מבחינה חוקית לעשות כן.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    תנאי תשלום
+                  </h4>
+                  <p>
+                    בכפוף לכל הוראות תשלום לפי שימוש או כל דבר הסותר בטופס ההזמנה, האגרות המפורטות בכל טופס הזמנה הן סופיות. אלא אם כן נקבע אחרת בטופס ההזמנה, האגרות ישולמו שנתית או חודשית (כפי שנקבע בטופס ההזמנה), מראש, עם קבלת חשבונית על ידי חיוב אמצעי התשלום המאושר של הלקוח בתחילת כל תקופת מנוי.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+                קניין רוחני וזכות שימוש
+              </h3>
+              
+              <div className='space-y-4'>
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    קניין רוחני של החברה
+                  </h4>
+                  <p>
+                    בין החברה ללקוח, כל הזכות, התואר והעניין בפלטפורמה, האתר ומסמכי החברה, כולל, ללא הגבלה, כל שירותים, תוכן, חומרים, תוכנה, ידע, קבצי נתונים, תיעוד, קוד, SDK, API, עיצוב, טקסט, מדיה, מתודולוגיות, יצירות אמנות, שמות, לוגואים, סימני מסחר וסימני שירות (למעט נתוני הלקוח), כל הטכנולוגיה הקשורה או הבסיסית וכל עדכונים, גרסאות חדשות, שינויים, שיפורים, פיתוחים או נגזרות שלהם (מלבד תוצר שנוצר), הם הרכוש הבלעדי של החברה ומעניקי הרישיון שלה.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    תוצר שנוצר ונתוני קלט
+                  </h4>
+                  <p>
+                    בכפוף לבעלות החברה כפי שמתואר לעיל בסעיף "קניין רוחני של החברה", בין החברה ללקוח, במידה שזכויות כאלה קיימות תחת החוק החל, הלקוח הוא הבעלים של כל הזכויות, התואר והעניין בתוכנה ויישומים שנוצרו על ידי הפלטפורמה ("תוצר שנוצר") הנובעים מהנחיות או נתוני לקוח שהלקוח משתף עם הפלטפורמה למטרות יצירת התוצר שנוצר ("נתוני קלט"). החברה מוותרת על כל הזכויות, התואר והעניינים שיכולים להיות לה בתוצר שנוצר, ללא מתן כל ייצוג או אחריות לגבי אופי זכויות כאלה.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    שימוש מוגבל
+                  </h4>
+                  <p>
+                    הלקוח ומשתמשיו לא רשאים, ולא רשאים להרשות או לסייע לאחרים: (א) להשתמש בפלטפורמה, באתר, בתוצר שנוצר או במסמכי החברה בניגוד למדיניות השימוש האחראי; (ב) להעתיק, לשנות, לשנות, לתרגם, לחקות, ליצור יצירות נגזרות בהתבסס על, או לשכפל את הפלטפורמה, האתר ומסמכי החברה; (ג) לעקוף כל אמצעים שהחברה עשויה להשתמש בהם כדי למנוע או להגביל גישה לפלטפורמה או לאתר.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+                אחריות והגבלת אחריות
+              </h3>
+              
+              <div className='bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-4'>
+                <p className='text-yellow-800 text-sm'>
+                  <strong>הודעה חשובה:</strong> החברה לא מתחייבת, לא מתחייבת או לא מבטיחה שהפלטפורמה תספק את צרכי הלקוח או תהיה אופטימלית בנסיבות. הפלטפורמה, האתר, מסמכי החברה וכל תוצר שנוצר מסופקים על בסיס "כמו שהם" ו"כמו שזמינים" ו"עם כל הפגמים", וללא אחריות, ערבויות או ייצוגים מכל סוג.
+                </p>
+              </div>
+              
+              <p className='mb-4'>
+                החברה לא מתחייבת שהשימוש בפלטפורמה יהיה ללא הפרעה, ללא שגיאות, בזמן, מאובטח או ללא פגיעויות, או יעמוד בדרישות או ציפיות הספציפיות של הלקוח, שפגמים יתגלו או יתוקנו, או שהפעולה תהיה ללא וירוסים, באגים, תוכנות זדוניות, רכיבים מזיקים או מגבלות תוכנה.
+              </p>
+              
+              <p className='mb-4'>
+                הלקוח אחראי באופן בלעדי לנתוני הלקוח, נתוני הקלט וכל נתונים שמשתמשי הקצה שלו משתפים עם התוצר שנוצר, ויש להעריך את הדיוק, הפונקציונליות והאבטחה של התוצר שנוצר בכל מקרה, כולל על ידי ביצוע סקירה אנושית במידת הצורך.
               </p>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                9. שינוי תנאים
+                תקופה וסיום
               </h3>
-              <p>
-                החברה רשאית לשנות תנאים אלו בהודעה מוקדמת של 30 יום. המשך השימוש
-                לאחר השינוי מהווה הסכמה לתנאים החדשים.
-              </p>
+              
+              <div className='space-y-4'>
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    תקופת מנוי
+                  </h4>
+                  <p>
+                    הפלטפורמה מסופקת על בסיס מנוי לתקופה שנבחרה על ידי הלקוח ("המנוי" ו"תקופת המנוי").
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    חידוש אוטומטי
+                  </h4>
+                  <p>
+                    המנוי של הלקוח יחודש אוטומטית, ואמצעי התשלום של הלקוח יחויב עבור חידוש כזה, כברירת מחדל ללא הודעה מוקדמת על החידוש ללקוח, אלא אם כן בוטל על ידי החברה או הלקוח לפחות 30 יום לפני פקיעתו.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    סיום על ידי החברה
+                  </h4>
+                  <p>
+                    החברה רשאית לסיים או להשעות את השימוש והגישה של הלקוח לפלטפורמה (או כל חלק ממנה) מיידית, ללא הודעה מוקדמת או אחריות, מכל סיבה, כולל האירועים הבאים: (א) החברה מאמינה, לפי שיקול דעתה הבלעדי, שהלקוח או כל צד שלישי משתמש בפלטפורמה באופן שעלול להטיל סיכון אבטחה, עלול לגרום נזק לחברה או לכל צד שלישי, ו/או עלול ליצור כל אחריות לחברה או לכל צד שלישי.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    סיום על ידי הלקוח
+                  </h4>
+                  <p>
+                    הלקוח רשאי לסיים את המנוי שלו לפלטפורמה על ידי (א) כיבוי חידוש אוטומטי בהגדרות החשבון, או (ב) הגשת בקשת סיום על ידי יצירת קשר עם תמיכת Look At Me. הסיום ייכנס לתוקף בסוף תקופת המנוי הנוכחית ולא יפגע בהתחייבות הלקוח לשלם את האגרות החלות עבור תקופת המנוי.
+                  </p>
+                </div>
+              </div>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                10. דין חל וסמכות שיפוט
+                שונות
               </h3>
-              <p>
-                תנאים אלו כפופים לחוקי מדינת ישראל. סמכות השיפוט הבלעדית נתונה
-                לבתי המשפט בתל אביב.
-              </p>
+              
+              <div className='space-y-4'>
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    תיקונים
+                  </h4>
+                  <p>
+                    החברה רשאית לשנות את התנאים מעת לעת, ושינוי כזה ייכנס לתוקף בתאריך שבו הוא מפורסם באתר או משותף עם הלקוח על ידי הודעה בפלטפורמה. הלקוח אחראי לבדוק את האתר והפלטפורמה באופן קבוע עבור שינויים כאלה.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    דין חל וסמכות שיפוט
+                  </h4>
+                  <p>
+                    תנאים אלה וביצועם יוסדרו על ידי חוקי מדינת ישראל, ללא התחשבות בהוראות דיני קונפליקט שיגרמו ליישום חוקי כל סמכות שיפוט אחרת. הצדדים כאן מסכימים לסמכות השיפוט האישית הבלעדית ולמקום של בתי המשפט המוסמכים הממוקמים בתל אביב, ישראל.
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className='font-semibold text-gray-800 mb-2'>
+                    הסכם מלא
+                  </h4>
+                  <p>
+                    תנאים אלה וטופסי ההזמנה (והתנאים, ההסכמים והמדיניות האחרים המוזכרים או מקושרים כאן) מהווים את ההסכם המלא בין הצדדים כאן ביחס לנושא זה ומחליפים את כל ההבנות הקודמות של צדדים כאלה ביחס לכך.
+                  </p>
+                </div>
+              </div>
             </section>
 
             <section className='bg-gray-50 p-4 rounded-lg'>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
                 יצירת קשר
               </h3>
-              <p>לשאלות בנוגע לתנאים אלו, אנא צור קשר דרך האתר.</p>
+              <p>לכל שאלה או שאילתה בנוגע לתנאים אלה או לפלטפורמה בכלל, אנא אל תהסס ליצור איתנו קשר דרך מערכת התמיכה שלנו או בכתובת: marketing@lookatme.site</p>
             </section>
           </div>
         </div>
@@ -509,51 +609,52 @@ const PrivacyModal = ({ isOpen, onClose }) => {
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                1. מבוא והתחייבות
+                מבוא ועדכונים
               </h3>
               <p>
-                Look At Me Ltd. ("החברה", "אנחנו") מחויבת להגנה על פרטיותך
-                ולשקיפות מלאה בטיפול במידע האישי שלך. מדיניות זו מפרטת כיצד אנו
-                אוספים, משתמשים ומגינים על המידע שלך בהתאם לחוק הגנת הפרטיות
-                התשמ"א-1981 ולתקנות GDPR.
+                מדיניות פרטיות זו מפרטת כיצד Look At Me Ltd. וסניפיה ("Look At Me", "אנחנו", "שלנו" או "אנו") מעבדים מידע אישי (כפי שמוגדר להלן) הנאסף, בין היתר, דרך האתר שלנו או פלטפורמת השיווק החכמה המונעת בינה מלאכותית שלנו ("האתר" ו"הפלטפורמה" בהתאמה).
+              </p>
+              <p className='mt-3'>
+                פרטי החברה:
+              </p>
+              <div className='bg-gray-50 p-3 rounded-lg mt-2'>
+                <p><strong>Look At Me Ltd.</strong></p>
+                <p>marketing@lookatme.site</p>
+              </div>
+              <p className='mt-3'>
+                אנו עשויים לעדכן את מדיניות הפרטיות שלנו מעת לעת על ידי פרסום המדיניות החדשה בדף זה ועדכון תאריך "העדכון האחרון". אנו מעודדים אותך לבקר בדף זה באופן קבוע כדי לבדוק שינויים.
               </p>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                2. מידע שאנו אוספים
+                איזה מידע אנו אוספים
               </h3>
+              <p className='mb-4'>
+                אנו עשויים לאסוף מידע אישי אודותיך, כלקוח או משתמש בפלטפורמה או באתר שלנו ("אתה"), כלומר כל מידע הקשור לאדם טבעי מזוהה או ניתן לזיהוי או "נתונים אישיים", "מידע אישי" או "מידע מזהה אישית" כפי שמוגדר אחרת תחת חוקי הפרטיות החלים ("מידע אישי"):
+              </p>
+              
               <div className='space-y-4'>
                 <div>
                   <h4 className='font-semibold text-gray-800'>
-                    2.1 מידע זיהוי אישי:
+                    עבור משתמשי האתר:
                   </h4>
                   <ul className='list-disc pr-6 mt-1 space-y-1'>
-                    <li>שם מלא, כתובת אימייל ומספר טלפון</li>
-                    <li>פרטי תשלום (מעובדים באמצעות ספקי תשלום מאובטחים)</li>
-                    <li>כתובת IP ומידע דפדפן</li>
-                    <li>העדפות שפה ואזור גיאוגרפי</li>
+                    <li>מידע אישי שאתה מספק לנו מרצון כגון כתובת האימייל שלך, למשל כאשר אתה מתקשר איתנו דרך האפשרות 'צור קשר' באתר, או נרשם לעדכונים או רשימת תפוצה</li>
+                    <li>פרטי חיבור ספציפיים ומידע שעשוי לזהות אותך, כגון כתובת ה-IP שלך, נתוני לוג ושימוש וסוג מכשיר מדויק ומיקום</li>
                   </ul>
                 </div>
+                
                 <div>
                   <h4 className='font-semibold text-gray-800'>
-                    2.2 מידע טכני ושימוש:
+                    עבור משתמשי הפלטפורמה:
                   </h4>
                   <ul className='list-disc pr-6 mt-1 space-y-1'>
-                    <li>קובצי לוג ונתוני גישה לשירות</li>
-                    <li>מידע על הדרך בה אתה משתמש בשירות</li>
-                    <li>העדפות מותאמות אישית</li>
-                    <li>נתוני ביצועים ושיפור השירות</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className='font-semibold text-gray-800'>
-                    2.3 תוכן שהועלה:
-                  </h4>
-                  <ul className='list-disc pr-6 mt-1 space-y-1'>
-                    <li>תמונות, וידאו וקבצי מדיה לניתוח</li>
-                    <li>טקסטים ותיאורים</li>
-                    <li>מטא-דאטה של קבצים</li>
+                    <li>פרטי חשבון: שם מלא, כתובת אימייל, מספר טלפון ופרטי תשלום</li>
+                    <li>תוכן מדיה: תמונות, וידאו וקבצי שמע המועלים לניתוח AI</li>
+                    <li>נתוני קמפיינים: מטרות שיווק, תקציבים, קהל יעד ופרמטרים של קמפיינים</li>
+                    <li>נתוני ביצועים: סטטיסטיקות קמפיינים, תוצאות וניתוחים</li>
+                    <li>העדפות משתמש: הגדרות שפה, אזור גיאוגרפי והעדפות אישיות</li>
                   </ul>
                 </div>
               </div>
@@ -561,203 +662,174 @@ const PrivacyModal = ({ isOpen, onClose }) => {
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                3. מטרות השימוש במידע
+                איך Look At Me משתמשת במידע
               </h3>
-              <div className='space-y-2'>
-                <p>
-                  <strong>3.1</strong> מתן השירות וניתוח התוכן באמצעות בינה
-                  מלאכותית
-                </p>
-                <p>
-                  <strong>3.2</strong> יצירת המלצות שיווקיות מותאמות אישית
-                </p>
-                <p>
-                  <strong>3.3</strong> שיפור והתאמה של השירות לצרכיך
-                </p>
-                <p>
-                  <strong>3.4</strong> תמיכה טכנית ושירות לקוחות
-                </p>
-                <p>
-                  <strong>3.5</strong> עמידה בדרישות חוקיות ומיסוי
-                </p>
-                <p>
-                  <strong>3.6</strong> מניעת הונאות ואבטחת המערכת
-                </p>
-              </div>
+              <p className='mb-4'>
+                אנו משתמשים במידע באופן המתואר במדיניות פרטיות זו. בנוסף למטרות המפורטות כאן, המידע שאנו אוספים, שעשוי לכלול את המידע האישי שלך, עשוי לשמש אותנו למטרות הבאות:
+              </p>
+              
+              <ul className='list-disc pr-6 space-y-2'>
+                <li>להגיב לשאלות ובקשות מלקוחות ומשתמשים שלנו, או לספק לך מידע נוסף על הפלטפורמה, המוצרים והשירותים שלנו, וכן לספק לך תמיכה</li>
+                <li>לספק ללקוחות ומשתמשים שלנו גישה ושימוש בפלטפורמה, כולל תמיכה בקשר לכך</li>
+                <li>לנתח תוכן מדיה (תמונות, וידאו ושמע) באמצעות בינה מלאכותית מתקדמת</li>
+                <li>ליצור המלצות שיווקיות מותאמות אישית וקמפיינים אוטומטיים</li>
+                <li>להעלות ולפרסם קמפיינים בפלטפורמות שונות (פייסבוק, גוגל, טיקטוק)</li>
+                <li>לחקור ולפתור סכסוכים בקשר לשימוש בפלטפורמה ובאתר שלנו</li>
+                <li>לזהות ולמנוע פעילות הונאה ובלתי חוקית או כל סוג אחר של פעילות שעלולה לסכן או להשפיע לרעה על הפלטפורמה</li>
+                <li>לשפר את הביצועים של האתר והפלטפורמה</li>
+                <li>לפתח מוצרים ושירותים חדשים על ידי ביצוע אנליטיקס או מחקר</li>
+              </ul>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                4. שיתוף מידע עם צדדים שלישיים
+                עם מי אנו משתפים את המידע ולשם מה
               </h3>
               <div className='bg-red-50 p-4 rounded-lg border border-red-200 mb-4'>
                 <p className='text-red-800 text-sm'>
-                  <strong>התחייבות:</strong> אנו לא מוכרים או משתפים את המידע
-                  האישי שלך למטרות שיווקיות של צדדים שלישיים.
+                  <strong>התחייבות:</strong> אנו לא משכירים או מוכרים כל מידע אישי.
                 </p>
               </div>
-              <div className='space-y-2'>
-                <p>
-                  <strong>4.1 ספקי שירות מאושרים:</strong> רק ספקים מוכרים
-                  ומאובטחים לצורכי תפעול השירות
+              
+              <p className='mb-4'>אנו עשויים לשתף מידע אישי עם הנמענים הבאים:</p>
+              
+              <ul className='list-disc pr-6 space-y-2'>
+                <li>ספקי שירות צד שלישי שלנו המעורבים במתן שירותים בקשר לפלטפורמה, האתר או שליחת תקשורת שיווקית (האחרון,כמתך)</li>
+                <li>החברות הבנות והחברות הקשורות שלנו</li>
+                <li>רואי חשבון או יועצים לעסק של Look At Me</li>
+                <li>כל קונים פוטנציאליים, מלווים או משקיעים ב-Look At Me</li>
+                <li>פלטפורמות מדיה חברתית (פייסבוק, גוגל, טיקטוק) לצורך פרסום קמפיינים</li>
+                <li>ספקי AI (OpenAI) לצורך ניתוח תוכן</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+                איך אנו מגינים על המידע שלך
+              </h3>
+              <p className='mb-4'>
+                אנו מיישמים אמצעים טכניים, מנהליים וארגוניים סבירים מסחרית שנועדו להגן על המידע האישי שלך מפני אובדן, שימוש לרעה וגישה, חשיפה, שינוי או הרס לא מורשית, כולל הצפנה ומערכות ניהול משתמשים מאובטחות. עם זאת, עלינו לציין שאין שיטת העברה דרך האינטרנט או אחסון אלקטרוני שהיא 100% מאובטחת או נטולת שגיאות. לכן, עליך לנקוט זהירות מיוחדת בהחלטה איזה מידע אתה מספק לפלטפורמה.
+              </p>
+              
+              <div className='bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4'>
+                <p className='text-blue-800 text-sm'>
+                  🔒 <strong>אבטחה מתקדמת:</strong> הצפנה ברמה גבוהה ואמצעי אבטחה מתקדמים
                 </p>
-                <p>
-                  <strong>4.2 מקרי חובה חוקית:</strong> כאשר נדרש על פי דין או
-                  צו בית משפט
+              </div>
+              
+              <ul className='list-disc pr-6 space-y-2'>
+                <li>הצפנה מלאה של נתונים במנוחה ובתנועה</li>
+                <li>אימות מאובטח וניהול הרשאות</li>
+                <li>מוניטורינג אבטחה 24/7</li>
+                <li>גיבויים אוטומטיים מוצפנים</li>
+                <li>בדיקות אבטחה תקופתיות</li>
+                <li>הגנה מפני התקפות סייבר</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+                זכויות הפרטיות שלך
+              </h3>
+              <p className='mb-4'>
+                סמכויות שיפוט מסוימות מספקות לנושאי נתונים זכויות סטטוטוריות מסוימות למידע האישי שלהם. בכפוף לפטורים המסופקים על ידי החוק, ועם זיהוי נכון, ייתכן שיש לך זכות לפעולות מסוימות למידע האישי שלך כגון:
+              </p>
+              
+              <ul className='list-disc pr-6 space-y-2'>
+                <li><strong>זכות לאמת את המידע האישי שלך</strong> (לגשת, למחוק, לשנות או לעדכן כל מידע אישי הקשור אליך. למשל, אם אתה מאמין שהמידע האישי שלך שגוי, אתה יכול לבקש לתקן או למחוק אותו)</li>
+                <li><strong>זכות לבקש שנמחק מידע אישי אודותיך</strong> (בכפוף לכל התחייבות חוקית אחרת שעלולה לדרוש מאיתנו לשמור על המידע הזה)</li>
+                <li><strong>זכות להתנגד לעיבוד המידע האישי שלך</strong> כאשר הבסיס החוקי שלנו הוא אינטרס לגיטימי או שיווק ישיר</li>
+                <li><strong>זכות להגביל אותנו מעיבוד מידע אישי הנוגע אליך</strong> (למשל, אתה יכול לבקש שנפסיק להשתמש או לשתף את המידע האישי שלך עם ספקי שירות צד שלישי)</li>
+                <li><strong>זכות לייצא מידע אישי בפורמט נייד</strong></li>
+              </ul>
+              
+              <div className='bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-4'>
+                <p className='text-yellow-800 text-sm'>
+                  <strong>למימוש זכויותיך:</strong> אם ברצונך לממש כל אחת מהזכויות הללו, אנא צור איתנו קשר בכתובת: marketing@lookatme.site
                 </p>
               </div>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                5. אבטחת מידע ואמצעי הגנה
+                טכנולוגיות מעקב צד שלישי
               </h3>
-              <div className='space-y-3'>
-                <div className='bg-blue-50 p-3 rounded-lg'>
-                  <p className='text-blue-800 text-sm'>
-                    🔒 <strong>אבטחה מתקדמת:</strong> הצפנה ברמה גבוהה ואמצעי
-                    אבטחה מתקדמים
-                  </p>
-                </div>
-                <div className='space-y-2'>
-                  <p>
-                    <strong>5.1 אמצעי הגנה טכניים:</strong>
-                  </p>
-                  <ul className='list-disc pr-6 mt-1 space-y-1'>
-                    <li>הצפנה מלאה של נתונים במנוחה ובתנועה</li>
-                    <li>אימות דו-שלבי לחשבונות משתמשים</li>
-                    <li>מוניטורינג אבטחה 24/7</li>
-                    <li>גיבויים אוטומטיים מוצפנים</li>
-                    <li>בדיקות חדירה תקופתיות</li>
-                  </ul>
-                  <p>
-                    <strong>5.2 אמצעי הגנה ארגוניים:</strong>
-                  </p>
-                  <ul className='list-disc pr-6 mt-1 space-y-1'>
-                    <li>הדרכות אבטחה לכל העובדים</li>
-                    <li>גישה למידע על בסיס "צריך לדעת"</li>
-                    <li>הסכמי סודיות עם כל הגורמים הרלוונטיים</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                6. זכויותיך במידע האישי
-              </h3>
-              <div className='space-y-2'>
-                <p>
-                  <strong>6.1 זכות עיון:</strong> לקבל עותק של המידע האישי שלך
-                </p>
-                <p>
-                  <strong>6.2 זכות תיקון:</strong> לתקן מידע שגוי או לא מדויק
-                </p>
-                <p>
-                  <strong>6.3 זכות מחיקה:</strong> למחוק את חשבונך ואת המידע
-                  האישי
-                </p>
-                <p>
-                  <strong>6.4 זכות הגבלה:</strong> להגביל עיבוד המידע במקרים
-                  מסוימים
-                </p>
-                <p>
-                  <strong>6.5 זכות העברה:</strong> לקבל את המידע בפורמט ניתן
-                  להעברה
-                </p>
-                <p>
-                  <strong>6.6 זכות התנגדות:</strong> להתנגד לעיבוד המידע למטרות
-                  מסוימות
+              <p className='mb-4'>
+                אנו משתמשים בקובצי Cookie וטכנולוגיות אחרות בשירותים שלנו, כולל כאשר אתה מבקר באתר שלנו או ניגש לפלטפורמה שלנו. "Cookie" הוא פיסת מידע קטנה שאתר מקצה למכשיר שלך בזמן שאתה צופה באתר. קובצי Cookie מועילים מאוד ויכולים לשמש למטרות שונות. מטרות אלה כוללות לאפשר לך לנווט בין דפים ביעילות, לאפשר הפעלה אוטומטית של תכונות מסוימות, לזכור את ההעדפות שלך ולהפוך את האינטראקציה בינך לבין הפלטפורמה שלנו למהירה וקלה יותר.
+              </p>
+              
+              <p className='mb-4'>
+                האתר שלנו משתמש בקובצי Cookie כדי לספק לך שירותים, לאפשר את השימוש שלך בפלטפורמה, לזהות אותך לביקורים חוזרים (למשל, לאפשר לנו לאחסן את ההעדפות שלך לכניסה הבאה), ולנטר ולנתח את הגישה שלך לאינטרנט.
+              </p>
+              
+              <p className='mb-4'>
+                אנו גם משתמשים בכלי הנקרא Google Analytics כדי לאסוף מידע על השימוש שלך בפלטפורמה ובאתר. שירות צד שלישי זה אוסף מידע כגון כמה פעמים משתמשים ניגשים לפלטפורמה או לאתר, באילו דפים הם מבקרים כשהם עושים זאת, וכו'. אנו משתמשים במידע שאנו מקבלים מכלים אלה רק כדי לשפר את האתר והפלטפורמה שלנו.
+              </p>
+              
+              <div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
+                <p className='text-orange-800 text-sm'>
+                  <strong>ניהול קובצי Cookie:</strong> אתה יכול להסיר את קובצי Cookie על ידי ביצוע ההוראות של העדפות המכשיר שלך. תוכל למצוא מידע נוסף על קובצי Cookie ב-www.allaboutcookies.org; עם זאת, אם תבחר להשבית קובצי Cookie, חלק מהתכונות של השירות שלנו עלולות לא לפעול כראוי והחוויה המקוונת שלך עלולה להיות מוגבלת.
                 </p>
               </div>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                7. קובצי Cookie ונתוני מעקב
+                כמה זמן אנו שומרים את המידע
               </h3>
-              <div className='space-y-2'>
-                <p>
-                  <strong>7.1 סוגי קובצים בשימוש:</strong>
-                </p>
-                <ul className='list-disc pr-6 mt-1 space-y-1'>
-                  <li>
-                    <strong>חיוניים:</strong> נדרשים לתפקוד השירות
-                  </li>
-                  <li>
-                    <strong>פונקציונליים:</strong> שומרים העדפות משתמש
-                  </li>
-                  <li>
-                    <strong>אנליטיים:</strong> עוזרים לשפר את השירות
-                  </li>
-                </ul>
-                <p>
-                  <strong>7.2</strong> תוכל לנהל העדפות קובצים בהגדרות הדפדפן
-                  שלך
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                8. שמירת מידע ומחיקה
-              </h3>
-              <div className='space-y-2'>
-                <p>
-                  <strong>8.1</strong> מידע החשבון נשמר כל עוד החשבון פעיל
-                </p>
-                <p>
-                  <strong>8.2</strong> תוכן שהועלה נמחק תוך 30 יום ממחיקת החשבון
-                </p>
-                <p>
-                  <strong>8.3</strong> נתוני תשלום נשמרים 7 שנים לצורכי מיסוי
-                </p>
-                <p>
-                  <strong>8.4</strong> לוגים טכניים נשמרים עד 12 חודשים
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                9. העברת מידע בינלאומית
-              </h3>
-              <p>
-                השירות מופעל על תשתיות מאובטחות. במקרים בהם נדרשת העברת מידע
-                בינלאומית, היא מתבצעת תחת אמצעי הגנה מתאימים ובהתאם לדרישות
-                החוק.
+              <p className='mb-4'>
+                אנו שומרים את המידע שאנו אוספים ממך כל עוד זה נחוץ בהתבסס על המטרה שלשמה הוא נאסף ובהתחשב בעמידה בהתחייבויות החוקיות שלנו, פתרון סכסוכים ואכיפת הזכויות שלנו. תקופות השמירה ייקבעו תוך התחשבות בסוג המידע שנאסף ובמטרה שלשמה הוא נאסף, תוך התחשבות בדרישות החלות על המצב ובצורך להשמיד מידע מיושן ולא בשימוש בזמן הסביר המוקדם ביותר.
+              </p>
+              
+              <ul className='list-disc pr-6 space-y-2'>
+                <li><strong>מידע חשבון:</strong> נשמר כל עוד החשבון פעיל</li>
+                <li><strong>תוכן מדיה:</strong> נמחק תוך 30 יום ממחיקת החשבון</li>
+                <li><strong>נתוני תשלום:</strong> נשמרים 7 שנים לצורכי מיסוי וחוק</li>
+                <li><strong>לוגים טכניים:</strong> נשמרים עד 12 חודשים</li>
+                <li><strong>נתוני קמפיינים:</strong> נשמרים כל עוד החשבון פעיל</li>
+                <li><strong>נתוני אנליטיקס:</strong> נשמרים עד 24 חודשים</li>
+              </ul>
+              
+              <p className='mt-4'>
+                אנו עשויים לתקן, להשלים או להסיר מידע לא שלם או לא מדויק, בכל עת ולפי שיקול דעתנו. אנו עשויים לשמור רשומות המכילות את המידע האישי שלך, תקשורת וכל דבר אחר כנדרש על ידי חוקים ותקנות חלים.
               </p>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                10. שינויים במדיניות
+                העברה בינלאומית
               </h3>
               <p>
-                במקרה של שינויים מהותיים במדיניות, נודיע לך באימייל ונבקש הסכמה
-                חדשה במידת הצורך. שינויים קלים יפורסמו באתר בהודעה מוקדמת.
+                מכיוון ש-Look At Me פועלת גלובלית, ייתכן שיהיה צורך עבורנו להעביר מידע, כולל מידע אישי, למדינות אחרות מאשר המדינה שבה המידע נאסף. במקרים אלה, נעביר את הנתונים שלך בהתאם להוראות חוק הפרטיות החלים שנועדו להגן על עיבוד המידע האישי שלך.
               </p>
             </section>
 
             <section>
               <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                11. תלונות ופניות
+                שינויים במדיניות
               </h3>
+              <p>
+                במקרה של שינויים מהותיים במדיניות, נודיע לך באימייל ונבקש הסכמה חדשה במידת הצורך. שינויים קלים יפורסמו באתר בהודעה מוקדמת.
+              </p>
+            </section>
+
+            <section>
+              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+                תלונות ופניות
+              </h3>
+              <p className='mb-4'>
+                אם ברצונך להעלות תלונה על איך טיפלנו במידע האישי שלך, אנא צור איתנו קשר ישירות בכתובת: marketing@lookatme.site
+              </p>
+              
+              <p className='mb-4'>
+                אם אינך מרוצה מהתגובה שלנו או מאמין שאנו אוספים או מעבדים את המידע האישי שלך שלא בהתאם לחוקים, אתה רשאי לבחור להגיש תלונה לרשות הגנת הפרטיות הרלוונטית.
+              </p>
+              
               <div className='bg-purple-50 p-4 rounded-lg border border-purple-200'>
                 <p className='text-purple-800 text-sm'>
-                  לתלונות או פניות בנושא הגנת פרטיות, אנא צור קשר דרך האתר.
-                  זכותך להגיש תלונה לרשות הגנת הפרטיות.
+                  <strong>יצירת קשר:</strong> לכל שאלה או בקשה בנושא מדיניות פרטיות זו, אנא צור איתנו קשר בכתובת: marketing@lookatme.site
                 </p>
               </div>
-            </section>
-
-            <section className='bg-gray-50 p-4 rounded-lg'>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
-                פרטי יצירת קשר
-              </h3>
-              <p className='text-sm text-gray-600'>
-                לפניות בנושא הגנת פרטיות, אנא צור קשר דרך האתר.
-              </p>
             </section>
           </div>
         </div>
@@ -945,13 +1017,7 @@ const Index = () => {
               </div>
 
               {/* Enhanced Navigation */}
-              <nav className='hidden md:flex items-center space-x-6'>
-                <Button
-                  variant='ghost'
-                  className='text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm'
-                >
-                  {t('features')}
-                </Button>
+              <nav className='hidden md:flex items-center gap-8'>
                 <Button
                   variant='ghost'
                   className='text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm'
@@ -1229,14 +1295,14 @@ const Index = () => {
                 onMouseLeave={() => setHoveredProblem(null)}
               >
                 <CardContent className='p-8'>
-                  <div className='flex items-start space-x-4'>
+                  <div className='flex items-start space-x-8'>
                     <div
                       className={`w-16 h-16 bg-gradient-to-r ${problem.gradient} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}
                     >
                       <problem.icon className='h-8 w-8 text-white' />
                     </div>
                     <div className='flex-1'>
-                      <h3 className='text-xl font-bold text-gray-800 mb-3'>
+                      <h3 className='text-xl font-bold text-gray-800 mb-3 mr-2'>
                         {problem.title}
                       </h3>
                       <p className='text-gray-600 leading-relaxed'>

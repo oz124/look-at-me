@@ -890,7 +890,7 @@ ${JSON.stringify(audioAnalysis, null, 2)}
     "KPIs": ["מטריקות למעקב רלוונטיות למטרה"],
     "ניתוח_תוכן": "ניתוח מפורט של איך התוכן משפיע על האסטרטגיה"
   },
-  "טקסט_פרסומי_מותאם": "טקסט מותאם לסרטון ולכל פלטפורמה",
+  "טקסט_פרסומי_מותאם": "טקסט מותאם לסרטון ולכל פלטפורמה (ללא כותרות כמו ### הכותרת: או ### טקסט פרסומת:)",
   "אופטימיזציות": ["הצעות לשיפור בהתבסס על התוכן"]
 }
 
@@ -900,6 +900,17 @@ ${JSON.stringify(audioAnalysis, null, 2)}
 - TikTok
 
 חלק את התקציב רק בין הפלטפורמות האלה בלבד, בהתבסס על ניתוח חכם של התוכן והמטרה.
+
+הערה חשובה: בטקסט הפרסומי, אל תוסיף כותרות כמו "### הכותרת:" או "### טקסט פרסומת:" או "### האשטגים:" - פשוט כתוב את הטקסט הפרסומת עצמו.
+
+דוגמה לפלט הנכון:
+שמרו את הרגעים הכי יקרים לנצח 🌟
+
+הורים יקרים, הרגעים הראשונים של ילדינו הם יקרים מכל – הצעד הראשון, החיוך הראשון, המילה הראשונה. עם שירות העריכה של "המזכרת הראשונה שלהם", תוכלו לשמור את הזיכרונות החשובים האלו בצורה מקצועית ומרגשת.
+
+#מזכרותמשפחתיות #BabyStep #זיכרונותבלתינשכחים
+
+שים לב: אין כותרות כמו "### כותרת:" - רק הטקסט עצמו!
       `;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -911,7 +922,7 @@ ${JSON.stringify(audioAnalysis, null, 2)}
         body: JSON.stringify({
           model: "gpt-4o",
           messages: [
-            { role: "system", content: "אתה יועץ שיווק מומחה עולמי. תמיד תחזיר JSON תקין ומובנה." },
+            { role: "system", content: "אתה יועץ שיווק מומחה עולמי. תמיד תחזיר JSON תקין ומובנה. בטקסט הפרסומי, אל תוסיף כותרות כמו '### הכותרת:' או '### טקסט פרסומת:' - פשוט כתוב את הטקסט הפרסומת עצמו. דוגמה: 'שמרו את הרגעים הכי יקרים לנצח 🌟\n\nהורים יקרים...\n\n#מזכרותמשפחתיות #BabyStep' - ללא כותרות!" },
             { role: "user", content: prompt }
           ],
           temperature: 0.2,
@@ -1571,7 +1582,7 @@ ${JSON.stringify(audioAnalysis, null, 2)}
     return mapping[goal] || 'BRAND_AWARENESS';
   }
 
-  async deployAutomaticCampaign(platformName, campaignParams, adCreative) {
+  async deployAutomaticCampaign(platformName, campaignParams, adCreative, videoFile = null) {
     try {
       console.log(`🚀 מפרסם קמפיין אוטומטי ב-${platformName}...`);
       
@@ -1581,19 +1592,33 @@ ${JSON.stringify(audioAnalysis, null, 2)}
         throw new Error(`לא מחובר ל-${platformName}`);
       }
 
-      // שליחת בקשה ליצירת קמפיין דרך backend מאובטח
+      // עדכון progress - התחלת העלאה
+      if (videoFile) {
+        setUploadProgress(prev => ({ 
+          ...prev, 
+          [platformName]: 'מעלה סרטון...' 
+        }));
+      }
+
+      // שליחת בקשה ליצירת קמפיין דרך backend מאובטח עם קובץ סרטון
+      const formData = new FormData();
+      formData.append('platform', platformName);
+      formData.append('campaignParams', JSON.stringify(campaignParams));
+      formData.append('adCreative', JSON.stringify(adCreative));
+      formData.append('accessToken', accessToken);
+      
+      // הוספת קובץ הסרטון אם קיים
+      if (videoFile) {
+        formData.append('video', videoFile);
+        console.log(`📹 מעלה סרטון ל-${platformName}:`, videoFile.name);
+      }
+
       const response = await fetch('/api/campaigns/create', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-API-Key': 'test-api-key-123'
         },
-        body: JSON.stringify({
-          platform: platformName,
-          campaignParams: campaignParams,
-          adCreative: adCreative,
-          accessToken: accessToken
-        })
+        body: formData
       });
 
       if (!response.ok) {
@@ -1606,9 +1631,26 @@ ${JSON.stringify(audioAnalysis, null, 2)}
         throw new Error(result.error || 'Campaign creation failed');
       }
 
+      // עדכון progress - העלאה הושלמה
+      if (videoFile) {
+        setUploadProgress(prev => ({ 
+          ...prev, 
+          [platformName]: 'הושלם בהצלחה ✅' 
+        }));
+      }
+
       return result.result;
     } catch (error) {
       console.error(`שגיאה בפרסום קמפיין ב-${platformName}:`, error);
+      
+      // עדכון progress - שגיאה בהעלאה
+      if (videoFile) {
+        setUploadProgress(prev => ({ 
+          ...prev, 
+          [platformName]: 'שגיאה בהעלאה ❌' 
+        }));
+      }
+      
       return {
         success: false,
         platform: platformName,
@@ -1819,9 +1861,12 @@ function EnhancedCampaign() {
   });
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [currentAnalysisStep, setCurrentAnalysisStep] = useState("");
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState(0);
+  const [analysisStartTime, setAnalysisStartTime] = useState(null);
   const [language, setLanguage] = useState('he');
   const [connectedPlatforms, setConnectedPlatforms] = useState({});
   const [deploymentProgress, setDeploymentProgress] = useState({});
+  const [uploadProgress, setUploadProgress] = useState({}); // Progress for video uploads
   const [campaignResults, setCampaignResults] = useState([]);
   const [isDeploying, setIsDeploying] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -2272,66 +2317,160 @@ function EnhancedCampaign() {
     setIsAnalyzing(true);
     setAnalysisProgress(0);
     setCurrentAnalysisStep("מתחיל ניתוח...");
+    setAnalysisStartTime(Date.now());
+    setEstimatedTimeRemaining(120); // 2 דקות משוערות
     
     try {
-      const progressSteps = [
-        { progress: 20, step: "מחלץ פריימים מהסרטון..." },
-        { progress: 40, step: "מנתח תוכן ויזואלי..." },
-        { progress: 60, step: "מתמלל ומנתח אודיו..." },
-        { progress: 80, step: "יוצר אסטרטגיה מתקדמת..." },
-        { progress: 100, step: "מסיים ניתוח..." }
-      ];
-
-      for (const { progress, step } of progressSteps) {
-        try {
-          setAnalysisProgress(progress);
+      // התחלת הניתוח האמיתי
+      const startTime = Date.now();
+      let currentProgress = 0;
+      
+      // חישוב זמן משוער בהתאם לגודל הקובץ
+      const fileSizeMB = videoFile.size / (1024 * 1024);
+      const baseTime = 60; // זמן בסיסי של דקה
+      const sizeMultiplier = Math.max(1, fileSizeMB / 10); // 10MB = 1x, 20MB = 2x, וכו'
+      const estimatedTotalTime = Math.round(baseTime * sizeMultiplier);
+      
+      // עדכון התקדמות בזמן אמת
+      const updateProgress = (progress, step, timeEstimate) => {
+        setAnalysisProgress(progress);
+        setCurrentAnalysisStep(step);
+        setEstimatedTimeRemaining(timeEstimate);
+        currentProgress = progress;
+      };
+      
+      // פונקציה לעדכון התקדמות בזמן אמת עם אנימציה איטית וחלקה
+      const updateProgressRealTime = async (targetProgress, step, timeEstimate) => {
+        const startProgress = currentProgress;
+        const progressDiff = targetProgress - startProgress;
+        const duration = Math.max(8000, progressDiff * 300); // לפחות 8 שניות, או 300ms לכל אחוז
+        const totalSteps = Math.abs(progressDiff) * 5; // הרבה יותר צעדים לאנימציה חלקה יותר
+        const stepTime = duration / totalSteps;
+        
+        for (let i = 0; i <= totalSteps; i++) {
+          const newProgress = startProgress + (progressDiff * i / totalSteps);
+          setAnalysisProgress(Math.round(newProgress));
           setCurrentAnalysisStep(step);
-          await new Promise(resolve => setTimeout(resolve, 800));
-        } catch (stepError) {
-          console.warn('Error in progress step:', stepError);
+          setEstimatedTimeRemaining(timeEstimate);
+          currentProgress = Math.round(newProgress);
+          
+          if (i < totalSteps) {
+            await new Promise(resolve => setTimeout(resolve, stepTime));
+          }
         }
+      };
+      
+      // שלב 1: התחלת הניתוח
+      await updateProgressRealTime(5, "המערכת שלנו מתחילה ניתוח מתקדם עבורך...", estimatedTotalTime);
+      
+      try {
+        // קריאה ל-backend API במקום ל-OpenAI ישירות
+        const requestFormData = new FormData();
+        requestFormData.append('video', videoFile);
+        requestFormData.append('budget', formData.dailyBudget || "100");
+        requestFormData.append('businessDescription', formData.businessDescription || "עסק כללי");
+        requestFormData.append('campaignGoal', formData.campaignGoal || "awareness");
+        
+        // שלב 2: שליחת בקשה לשרת
+        await updateProgressRealTime(15, "המערכת שולחת את הסרטון לניתוח מתקדם...", Math.round(estimatedTotalTime * 0.8));
+        
+        // התחלת הניתוח בשרת עם עדכון מתמשך
+        const analysisPromise = fetch('/api/ai/advanced-analyze', {
+          method: 'POST',
+          headers: {
+            'X-API-Key': 'test-api-key-123'
+          },
+          body: requestFormData
+        });
+
+        // עדכון מתמשך בזמן שהניתוח קורה
+        const progressInterval = setInterval(async () => {
+          if (currentProgress < 95) {
+            const newProgress = Math.min(currentProgress + 1, 95);
+            setAnalysisProgress(newProgress);
+            currentProgress = newProgress;
+            
+            // עדכון הודעות בהתאם להתקדמות
+            if (newProgress < 25) {
+              setCurrentAnalysisStep("המערכת מנתחת את הסרטון שלך...");
+            } else if (newProgress < 45) {
+              setCurrentAnalysisStep("המערכת מנתחת צבעים ותאורה עבורך...");
+            } else if (newProgress < 65) {
+              setCurrentAnalysisStep("המערכת מתמללת ומנתחת את השמע שלך...");
+            } else if (newProgress < 85) {
+              setCurrentAnalysisStep("המערכת בונה אסטרטגיה מותאמת עבורך...");
+            } else {
+              setCurrentAnalysisStep("המערכת מכינה המלצות מותאמות אישית עבורך...");
+            }
+          }
+        }, 800); // עדכון כל 0.8 שניות לאט יותר
+
+        const response = await analysisPromise;
+
+        if (!response.ok) {
+          clearInterval(progressInterval);
+          throw new Error(`Backend analysis failed: ${response.statusText}`);
+        }
+
+        clearInterval(progressInterval);
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Analysis failed');
+        }
+
+        // שלב 4: הניתוח הושלם
+        await updateProgressRealTime(100, "הניתוח הושלם בהצלחה! המערכת עבדה קשה עבורך!", 0);
+        
+        // המרת התוצאה לפורמט המקורי
+        const analysisResult = {
+          visual_analysis: {
+            video_analysis: result.analysis.visual_analysis.video_analysis,
+            frames_analyzed: result.analysis.visual_analysis.frames_analyzed,
+            frame_details: result.analysis.visual_analysis.frame_details,
+            video_overview: result.analysis.visual_analysis.video_overview,
+            visual_recommendations: result.analysis.visual_analysis.visual_recommendations
+          },
+          audio_analysis: {
+            transcription: result.analysis.audio_analysis.transcription,
+            text_analysis: result.analysis.audio_analysis.text_analysis,
+            audio_recommendations: result.analysis.audio_analysis.audio_recommendations
+          },
+          master_strategy: result.analysis.master_strategy,
+          custom_post_description: result.analysis.custom_post_description,
+          analysis_summary: result.analysis.analysis_summary
+        };
+        
+        
+        // שמירת התוצאות
+        setBrainResponse(analysisResult);
+        setAiAnalysisComplete(true);
+        
+        // עדכון תיאור הפוסט אוטומטית
+        if (analysisResult.custom_post_description) {
+          setFormData(prev => ({
+            ...prev,
+            postDescription: analysisResult.custom_post_description
+          }));
+        }
+        
+        const totalTime = Math.round((Date.now() - startTime) / 1000);
+        const estimatedTime = Math.round(estimatedTotalTime);
+        const accuracy = Math.round((1 - Math.abs(totalTime - estimatedTime) / estimatedTime) * 100);
+        
+        console.log(`✅ ניתוח הושלם בהצלחה תוך ${totalTime} שניות (משוער: ${estimatedTime} שניות, דיוק: ${accuracy}%)`);
+        
+        showToastMessage(`✅ ניתוח הושלם בהצלחה תוך ${totalTime} שניות!`);
+        
+        return true;
+        
+      } catch (error) {
+        console.error("שגיאה בניתוח מתקדם:", error);
+        showToastMessage("❌ שגיאה בניתוח הסרטון. אנא נסה שוב.");
+        return false;
       }
 
-      // קריאה ל-backend API במקום ל-OpenAI ישירות
-      const requestFormData = new FormData();
-      requestFormData.append('video', videoFile);
-      requestFormData.append('budget', formData.dailyBudget || "100");
-      requestFormData.append('businessDescription', formData.businessDescription || "עסק מקומי");
-      requestFormData.append('campaignGoal', formData.campaignGoal || "awareness");
-
-      console.log("📤 שולח בקשה לשרת...");
-      const response = await fetch('/api/ai/advanced-analyze', {
-        method: 'POST',
-        headers: {
-          'X-API-Key': 'test-api-key-123'
-        },
-        body: requestFormData
-      });
-
-      if (!response.ok) {
-        throw new Error(`שגיאה בשרת: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log("📥 קיבלתי תגובה מהשרת:", result);
-      console.log("🔍 result.data:", result.data);
-      console.log("🔍 result.data?.analysis:", result.data?.analysis);
-
-      if (!result || !result.success) {
-        throw new Error(result.error || 'ניתוח הסרטון נכשל');
-      }
-
-      setBrainResponse(result.analysis);
-      setAiAnalysisComplete(true);
-
-      setFormData(prev => ({
-        ...prev,
-        aiSuggestion: JSON.stringify(result, null, 2),
-        postDescription: result.analysis?.custom_post_description || "תיאור מותאם לסרטון שלך"
-      }));
-
-      showToastMessage("🎯 ניתוח AI מתקדם הושלם! קיבלת המלצות מותאמות אישית");
-      return true;
 
     } catch (error) {
       console.error("❌ שגיאה בניתוח AI:", error);
@@ -2349,6 +2488,8 @@ function EnhancedCampaign() {
       setIsAnalyzing(false);
       setAnalysisProgress(0);
       setCurrentAnalysisStep("");
+      setEstimatedTimeRemaining(0);
+      setAnalysisStartTime(null);
     }
   };
 
@@ -2362,11 +2503,11 @@ function EnhancedCampaign() {
     let strategy = null;
     
     if (brainResponse?.master_strategy) {
-      try {
-        strategy = typeof brainResponse.master_strategy === 'string' 
-          ? JSON.parse(brainResponse.master_strategy)
-          : brainResponse.master_strategy;
-      } catch (parseError) {
+    try {
+      strategy = typeof brainResponse.master_strategy === 'string' 
+        ? JSON.parse(brainResponse.master_strategy)
+        : brainResponse.master_strategy;
+    } catch (parseError) {
         console.error("שגיאה בפרסור האסטרטגיה:", parseError);
         // Continue with null strategy - will use defaults
       }
@@ -2383,11 +2524,11 @@ function EnhancedCampaign() {
 
     if (platforms.length > 0 && connectedPlatformNames.length > 0) {
       // Use AI recommendations
-      platforms.forEach(platform => {
-        const platformName = platform?.שם || platform?.name;
-        if (platformName && connectedPlatformNames.includes(platformName)) {
-          const percentage = parseInt(String(platform.אחוז_תקציב || platform.percentage || "0%").replace('%', ''));
-          budgets[platformName] = Math.max(1, Math.floor((parseFloat(formData.dailyBudget || "100") * percentage) / 100));
+    platforms.forEach(platform => {
+      const platformName = platform?.שם || platform?.name;
+      if (platformName && connectedPlatformNames.includes(platformName)) {
+        const percentage = parseInt(String(platform.אחוז_תקציב || platform.percentage || "0%").replace('%', ''));
+        budgets[platformName] = Math.max(1, Math.floor((parseFloat(formData.dailyBudget || "100") * percentage) / 100));
           selected[platformName] = true;
         }
       });
@@ -2462,7 +2603,8 @@ function EnhancedCampaign() {
             deploymentResult = await enhancedBrain.deployAutomaticCampaign(
               platformName,
               campaignParams,
-              adCreative
+              adCreative,
+              formData.video // העברת קובץ הסרטון המקורי
             );
           } catch (deployError) {
             console.error(`שגיאה בשליחה ל-${platformName}:`, deployError);
@@ -2600,7 +2742,8 @@ function EnhancedCampaign() {
             deploymentResult = await enhancedBrain.deployAutomaticCampaign(
               platformName,
               campaignParams,
-              adCreative
+              adCreative,
+              formData.video // העברת קובץ הסרטון המקורי
             );
           } catch (deployError) {
             console.error(`שגיאה בשליחה ל-${platformName}:`, deployError);
@@ -2673,9 +2816,10 @@ function EnhancedCampaign() {
         return;
       }
 
-      const maxSize = 100 * 1024 * 1024; // 100MB
+      const maxSize = 4 * 1024 * 1024 * 1024; // 4GB - Facebook's limit (largest platform)
       if (file.size > maxSize) {
-        showToastMessage("קובץ הוידיאו גדול מדי. מקסימום 100MB");
+        const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(1);
+        showToastMessage(`קובץ הוידיאו גדול מדי (${fileSizeGB}GB). מקסימום 4GB עבור כל הפלטפורמות`);
         return;
       }
 
@@ -3272,12 +3416,12 @@ function EnhancedCampaign() {
                     {previewMode ? 'תצוגה מקדימה' : 'תצוגה מקדימה'}
                   </Button>
                   
-                  <div className="flex items-center space-x-2 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2 shadow-sm border border-gray-200/50">
-                    <div className="text-sm text-gray-600 font-medium">שלב</div>
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">
-                      {currentStep}
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium">מתוך 4</div>
+                <div className="flex items-center space-x-2 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2 shadow-sm border border-gray-200/50">
+                  <div className="text-sm text-gray-600 font-medium">שלב</div>
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">
+                    {currentStep}
+                  </div>
+                  <div className="text-sm text-gray-600 font-medium">מתוך 4</div>
                   </div>
                 </div>
               </div>
@@ -3387,7 +3531,7 @@ function EnhancedCampaign() {
                                 <Upload className="h-8 w-8 text-white" />
                               </div>
                               <p className="text-blue-600 font-bold text-lg">לחץ כדי להעלות סרטון</p>
-                              <p className="text-sm text-gray-600">MP4, MOV, AVI עד 100MB</p>
+                              <p className="text-sm text-gray-600">MP4, MOV, AVI עד 4GB (ידחוס אוטומטית לניתוח AI)</p>
                               <p className={`text-xs text-purple-600 bg-purple-50 px-3 py-2 rounded-full inline-flex items-center ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}>
                                 <Brain className="h-4 w-4" />
                                 <span>יעבור ניתוח AI מתקדם</span>
@@ -3450,11 +3594,97 @@ function EnhancedCampaign() {
                 {/* Step 2: Campaign Goal */}
                 {currentStep === 2 && (
                   <div className="space-y-6 md:space-y-8">
-                    <div className="text-center mb-8">
-                      <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <Target className="h-8 w-8 text-white" />
+                    {isAnalyzing ? (
+                      <div className="text-center py-12">
+                        <div className="mb-6">
+                          <div className="relative">
+                            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl animate-pulse">
+                              <Brain className="h-10 w-10 text-white animate-spin" />
+                            </div>
+                            {/* Rotating ring around the brain */}
+                            <div className="absolute inset-0 w-20 h-20 mx-auto border-4 border-transparent border-t-blue-300 rounded-full animate-spin"></div>
+                          </div>
+                          <h3 className="text-2xl font-bold text-gray-800 mb-2">AI מנתח את הסרטון...</h3>
+                          <p className="text-gray-600 mb-4 text-lg font-medium">{currentAnalysisStep}</p>
+                        </div>
+                          
+                          {/* Enhanced Progress Bar */}
+                          <div className="max-w-lg mx-auto mb-6">
+                            <div className="relative">
+                              <div className="h-6 bg-gray-200/60 rounded-full overflow-hidden shadow-inner">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full transition-all duration-1000 ease-out relative overflow-hidden" 
+                                  style={{width: `${analysisProgress}%`}}
+                                >
+                                  {/* Animated shimmer effect */}
+                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+                                  {/* Moving dots effect */}
+                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-ping"></div>
+                                </div>
+                              </div>
+                              
+                              {/* Progress percentage */}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-sm font-bold text-white drop-shadow-lg">
+                                  {Math.round(analysisProgress)}%
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Time remaining */}
+                            {estimatedTimeRemaining > 0 && (
+                              <div className="mt-3 flex items-center justify-center space-x-2">
+                                <Clock className="h-4 w-4 text-gray-500" />
+                                <span className="text-sm text-gray-600 font-medium">
+                                  זמן משוער: {estimatedTimeRemaining} שניות
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Fun facts while waiting */}
+                          <div className="max-w-md mx-auto">
+                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200 relative overflow-hidden">
+                              {/* Background animation */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 to-purple-100/20 animate-pulse"></div>
+                              
+                              <div className="relative z-10">
+                                <div className="flex items-center justify-center space-x-2 mb-2">
+                                  <Sparkles className="h-5 w-5 text-yellow-500 animate-bounce" />
+                                  <span className="text-sm font-medium text-gray-700">
+                                    {analysisProgress < 5 && "🚀 המערכת שלנו מתחילה ניתוח מתקדם עבורך..."}
+                                    {analysisProgress >= 5 && analysisProgress < 15 && "📤 המערכת שולחת את הסרטון לניתוח מתקדם..."}
+                                    {analysisProgress >= 15 && analysisProgress < 35 && "🎬 המערכת מנתחת את הסרטון שלך..."}
+                                    {analysisProgress >= 35 && analysisProgress < 50 && "👁️ המערכת מנתחת צבעים ותאורה עבורך..."}
+                                    {analysisProgress >= 50 && analysisProgress < 70 && "🎵 המערכת מתמללת ומנתחת את השמע שלך..."}
+                                    {analysisProgress >= 70 && analysisProgress < 90 && "🧠 המערכת בונה אסטרטגיה מותאמת עבורך..."}
+                                    {analysisProgress >= 90 && analysisProgress < 100 && "✨ המערכת מכינה המלצות מותאמות אישית עבורך..."}
+                                    {analysisProgress >= 100 && "🎉 הניתוח הושלם בהצלחה! המערכת עבדה קשה עבורך!"}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-600 text-center">
+                                  {analysisProgress < 5 && "המערכת שלנו מתחילה לעבוד קשה עבורך..."}
+                                  {analysisProgress >= 5 && analysisProgress < 15 && "המערכת שולחת את הסרטון שלך לניתוח מתקדם..."}
+                                  {analysisProgress >= 15 && analysisProgress < 35 && "המערכת מנתחת את הסרטון שלך..."}
+                                  {analysisProgress >= 35 && analysisProgress < 50 && "המערכת מנתחת צבעים, תאורה ואיכות ויזואלית עבורך..."}
+                                  {analysisProgress >= 50 && analysisProgress < 70 && "המערכת מתמללת ומנתחת את השמע והטון שלך..."}
+                                  {analysisProgress >= 70 && analysisProgress < 90 && "המערכת בונה אסטרטגיה שיווקית מותאמת אישית עבורך..."}
+                                  {analysisProgress >= 90 && analysisProgress < 100 && "המערכת מכינה המלצות מותאמות אישית עבורך..."}
+                                  {analysisProgress >= 100 && "הניתוח הושלם בהצלחה! המערכת עבדה קשה עבורך וקיבלת המלצות מותאמות אישית!"}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          
                       </div>
-                      <p className={`text-gray-600 text-lg ${isRTL ? 'text-right' : 'text-left'}`}>בחר את המטרה העיקרית של הקמפיין</p>
+                    ) : (
+                      <>
+                        <div className="text-center mb-8">
+                          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <Target className="h-8 w-8 text-white" />
+                          </div>
+                          <p className={`text-gray-600 text-lg ${isRTL ? 'text-right' : 'text-left'}`}>בחר את המטרה העיקרית של הקמפיין</p>
                       
                       {formData.video && (
                         <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-200">
@@ -3521,29 +3751,15 @@ function EnhancedCampaign() {
                         </Card>
                       ))}
                     </div>
+                      </>
+                    )}
                   </div>
                 )}
 
                 {/* Step 3: AI Analysis & Recommendations */}
                 {currentStep === 3 && (
                   <div className="space-y-6 md:space-y-8">
-                    {isAnalyzing ? (
-                      <div className="text-center py-12">
-                        <div className="relative mb-8">
-                          <div className="w-24 h-24 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Brain className="h-10 w-10 text-blue-600" />
-                          </div>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-800 mb-4">AI מנתח את הסרטון...</h3>
-                        <p className="text-gray-600 mb-6 text-lg">{currentAnalysisStep}</p>
-                        <div className="max-w-md mx-auto mb-4">
-                          <Progress value={analysisProgress} className="h-4 bg-gray-200 rounded-full" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full transition-all duration-500" style={{width: `${analysisProgress}%`}}></div>
-                        </div>
-                        <p className="text-sm text-gray-500 font-medium">{analysisProgress}% הושלם</p>
-                      </div>
-                    ) : (
+                    {!isAnalyzing && (
                       <>
                         {/* Analysis Header */}
                         <div className="text-center mb-8">
@@ -3990,9 +4206,9 @@ function EnhancedCampaign() {
                           <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-4">
                               <h4 className={`font-bold text-gray-800 flex items-center text-lg ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-                                <Sparkles className="h-5 w-5 text-green-600" />
-                                <span>אסטרטגיית פלטפורמות</span>
-                              </h4>
+                              <Sparkles className="h-5 w-5 text-green-600" />
+                              <span>אסטרטגיית פלטפורמות</span>
+                            </h4>
                               {!editingCards.platforms && (
                                 <Button
                                   onClick={() => {
@@ -4021,38 +4237,38 @@ function EnhancedCampaign() {
                             </div>
                             
                             {!editingCards.platforms ? (
-                              <div className="grid gap-3">
+                            <div className="grid gap-3">
                                 {(savedPlatforms.length > 0 ? savedPlatforms : recommendations.platforms.filter(p => p.recommended)).map((platform, index) => (
-                                  <div key={index} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
-                                    <div className={`flex items-center justify-between ${isRTL ? 'text-right' : 'text-left'}`}>
-                                      <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
-                                        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                                          {(() => {
-                                            try {
-                                              const IconComponent = platform?.icon || Target;
-                                              return React.createElement(IconComponent, { className: "h-5 w-5 text-white" });
-                                            } catch (error) {
-                                              return <Target className="h-5 w-5 text-white" />;
-                                            }
-                                          })()}
-                                        </div>
-                                        <div>
-                                          <p className="font-bold text-gray-800">{platform.name}</p>
-                                          <p className="text-xs text-gray-600">{platform.reason}</p>
-                                        </div>
+                                <div key={index} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
+                                  <div className={`flex items-center justify-between ${isRTL ? 'text-right' : 'text-left'}`}>
+                                    <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
+                                      <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                                        {(() => {
+                                          try {
+                                            const IconComponent = platform?.icon || Target;
+                                            return React.createElement(IconComponent, { className: "h-5 w-5 text-white" });
+                                          } catch (error) {
+                                            return <Target className="h-5 w-5 text-white" />;
+                                          }
+                                        })()}
                                       </div>
-                                      <div className="text-right">
-                                        <span className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
-                                          {platform.percentage}
-                                        </span>
-                                        <p className="text-xs text-gray-600 mt-1">
-                                          ₪{Math.floor((parseFloat(formData.dailyBudget || "100") * parseInt(String(platform.percentage).replace('%', '')) / 100))}
-                                        </p>
+                                      <div>
+                                        <p className="font-bold text-gray-800">{platform.name}</p>
+                                        <p className="text-xs text-gray-600">{platform.reason}</p>
                                       </div>
                                     </div>
+                                    <div className="text-right">
+                                      <span className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
+                                        {platform.percentage}
+                                      </span>
+                                      <p className="text-xs text-gray-600 mt-1">
+                                        ₪{Math.floor((parseFloat(formData.dailyBudget || "100") * parseInt(String(platform.percentage).replace('%', '')) / 100))}
+                                      </p>
+                                    </div>
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              ))}
+                            </div>
                             ) : (
                               <div className="space-y-4">
                                 {(savedPlatforms.length > 0 ? [...savedPlatforms, ...recommendations.platforms.filter(p => !savedPlatforms.find(sp => sp.name === p.name))] : recommendations.platforms).map((platform, index) => (
@@ -4150,9 +4366,9 @@ function EnhancedCampaign() {
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-4">
                             <h4 className={`font-bold text-gray-800 flex items-center text-lg ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-                              <Edit3 className="h-5 w-5 text-blue-600" />
-                              <span>תוכן הפרסומת</span>
-                            </h4>
+                            <Edit3 className="h-5 w-5 text-blue-600" />
+                            <span>תוכן הפרסומת</span>
+                          </h4>
                             {!editingCards.post && (
                               <Button
                                 onClick={() => {
@@ -4171,16 +4387,16 @@ function EnhancedCampaign() {
                           
                           {!editingCards.post ? (
                             <>
-                              <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
-                                <p className={`text-sm text-gray-700 leading-relaxed whitespace-pre-wrap ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
-                                  {formData.postDescription || 'לא הוזן תיאור פוסט'}
-                                </p>
-                              </div>
-                              {aiAnalysisComplete && (
-                                <div className={`mt-3 flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'} text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg`}>
-                                  <Sparkles className="h-3 w-3" />
-                                  <span>טקסט נוצר על ידי AI על בסיס ניתוח הסרטון</span>
-                                </div>
+                          <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
+                            <p className={`text-sm text-gray-700 leading-relaxed whitespace-pre-wrap ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+                              {formData.postDescription || 'לא הוזן תיאור פוסט'}
+                            </p>
+                          </div>
+                          {aiAnalysisComplete && (
+                            <div className={`mt-3 flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'} text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg`}>
+                              <Sparkles className="h-3 w-3" />
+                              <span>טקסט נוצר על ידי AI על בסיס ניתוח הסרטון</span>
+                            </div>
                               )}
                             </>
                           ) : (
@@ -4271,44 +4487,68 @@ function EnhancedCampaign() {
                     <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-200 rounded-3xl shadow-xl">
                       <CardContent className="p-8">
                         <div className="text-center">
-                          <>
-                            <div className="mb-6">
-                              <div className="w-20 h-20 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl">
-                                <Send className="h-10 w-10 text-white" />
-                              </div>
-                              <h4 className="text-xl font-bold text-gray-800 mb-2">מוכן לשליחה!</h4>
+                            <>
+                              <div className="mb-6">
+                                <div className="w-20 h-20 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl">
+                                  <Send className="h-10 w-10 text-white" />
+                                </div>
+                                <h4 className="text-xl font-bold text-gray-800 mb-2">מוכן לשליחה!</h4>
                               <p className="text-gray-600">הקמפיין מוכן לשליחה לפלטפורמות המחוברות. ניתן לערוך כל קלף לפני השליחה</p>
-                            </div>
-                            
-                            <div className="space-y-3">
-                              <Button
-                                onClick={handleAutomaticDeployment}
-                                disabled={isDeploying || Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length === 0}
-                                className={`w-full bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 hover:from-green-700 hover:via-blue-700 hover:to-purple-700 text-xl px-12 py-4 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center font-bold ${isRTL ? 'flex-row-reverse' : ''}`}
-                              >
-                                {isDeploying ? (
-                                  <>
-                                    <Loader2 className={`h-6 w-6 ${isRTL ? 'ml-3' : 'mr-3'} animate-spin`} />
-                                    משגר פרסומות...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Send className={`h-6 w-6 ${isRTL ? 'ml-3' : 'mr-3'}`} />
-                                    שלח לפרסום
-                                  </>
-                                )}
-                              </Button>
+                              </div>
                               
-                              <Button
+                              {/* Upload Progress Display */}
+                              {Object.keys(uploadProgress).length > 0 && (
+                                <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                  <h5 className="font-bold text-blue-800 mb-3 flex items-center">
+                                    <Upload className="h-5 w-5 ml-2" />
+                                    סטטוס העלאת סרטונים
+                                  </h5>
+                                  <div className="space-y-2">
+                                    {Object.entries(uploadProgress).map(([platform, status]) => (
+                                      <div key={platform} className="flex items-center justify-between bg-white p-3 rounded-lg border">
+                                        <span className="font-medium text-gray-700">{platform}</span>
+                                        <span className={`text-sm font-medium ${
+                                          status.includes('✅') ? 'text-green-600' :
+                                          status.includes('❌') ? 'text-red-600' :
+                                          'text-blue-600'
+                                        }`}>
+                                          {status}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="space-y-3">
+                                <Button
+                                  onClick={handleAutomaticDeployment}
+                                  disabled={isDeploying || Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length === 0}
+                                  className={`w-full bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 hover:from-green-700 hover:via-blue-700 hover:to-purple-700 text-xl px-12 py-4 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center font-bold ${isRTL ? 'flex-row-reverse' : ''}`}
+                                >
+                                  {isDeploying ? (
+                                    <>
+                                      <Loader2 className={`h-6 w-6 ${isRTL ? 'ml-3' : 'mr-3'} animate-spin`} />
+                                      משגר פרסומות...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className={`h-6 w-6 ${isRTL ? 'ml-3' : 'mr-3'}`} />
+                                    שלח לפרסום
+                                    </>
+                                  )}
+                                </Button>
+                                
+                                <Button
                                 onClick={() => window.location.href = '/analytics'}
-                                variant="outline"
+                                  variant="outline"
                                 className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 text-lg px-12 py-4 rounded-2xl shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center font-bold"
-                              >
+                                >
                                 <TrendingUp className={`h-5 w-5 ${isRTL ? 'ml-3' : 'mr-3'}`} />
                                 ביצועים בזמן אמת
-                              </Button>
-                            </div>
-                          </>
+                                </Button>
+                              </div>
+                            </>
                         </div>
                       </CardContent>
                     </Card>
@@ -4407,19 +4647,10 @@ function EnhancedCampaign() {
                     <Button 
                       onClick={handleNext}
                       disabled={isAnalyzing}
-                      className={`bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 flex items-center rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-bold ${isRTL ? 'flex-row-reverse' : ''}`}
+                      className={`bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 flex items-center rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-bold ${isRTL ? 'flex-row-reverse' : ''} disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
                     >
-                      {isAnalyzing ? (
-                        <>
-                          <Loader2 className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'} animate-spin`} />
-                          מנתח...
-                        </>
-                      ) : (
-                        <>
-                          הבא
-                          <ArrowRight className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'} ${isRTL ? 'rotate-180' : ''}`} />
-                        </>
-                      )}
+                      {isAnalyzing ? "מנתח..." : "הבא"}
+                      <ArrowRight className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'} ${isRTL ? 'rotate-180' : ''}`} />
                     </Button>
                   )}
                 </div>

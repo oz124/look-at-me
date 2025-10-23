@@ -5,7 +5,14 @@
 const OpenAI = require('openai');
 const formidable = require('formidable').formidable;
 const fs = require('fs');
+const path = require('path');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const { ValidationService, SecurityLogger } = require('../../src/lib/security');
+
+// Set FFmpeg path
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+
 
 // Initialize OpenAI with server-side API key
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -21,7 +28,7 @@ module.exports = async function handler(req, res) {
   console.log("📥 Received POST request to /api/ai/advanced-analyze");
 
   const form = formidable({
-    maxFileSize: 100 * 1024 * 1024, // 100MB
+    maxFileSize: 4 * 1024 * 1024 * 1024, // 4GB - Facebook's limit (largest platform)
     keepExtensions: true,
     uploadDir: require('os').tmpdir(),
     filter: function ({name, originalFilename, mimetype}) {
@@ -99,6 +106,28 @@ module.exports = async function handler(req, res) {
       filepath: videoFile.filepath
     });
 
+    // Check if file needs compression for OpenAI Whisper (25MB)
+    const maxFileSize = 25 * 1024 * 1024; // 25MB
+    let finalVideoFile = videoFile;
+    
+    if (videoFile.size > maxFileSize) {
+      console.log("🎬 File is large, compressing for AI analysis...");
+      
+      try {
+        // Compress the video for AI analysis
+        const compressionResult = await compressVideoForAI(videoFile);
+        finalVideoFile = compressionResult.compressedFile;
+        
+        console.log(`✅ Video compressed: ${(videoFile.size / (1024 * 1024)).toFixed(1)}MB → ${(finalVideoFile.size / (1024 * 1024)).toFixed(1)}MB`);
+      } catch (compressionError) {
+        console.error("❌ Video compression failed:", compressionError);
+        return res.status(400).json({ 
+          success: false, 
+          error: `לא ניתן לדחוס את הסרטון לניתוח AI. נסה עם סרטון קצר יותר או פנה לתמיכה.` 
+        });
+      }
+    }
+
     // Check if OpenAI API key is properly configured
     if (!openaiApiKey || openaiApiKey === 'sk-your-openai-key-here') {
       console.error("❌ OpenAI API key not configured!");
@@ -119,7 +148,7 @@ module.exports = async function handler(req, res) {
     // Step 1: Transcribe the video using Whisper
     console.log("🎤 Transcribing video with Whisper...");
     const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(videoFile.filepath),
+      file: fs.createReadStream(finalVideoFile.filepath),
       model: "whisper-1",
       language: 'he', // Hebrew
       response_format: 'json',
@@ -131,11 +160,11 @@ module.exports = async function handler(req, res) {
 
     // Step 2: Enhanced Visual Analysis
     console.log("🎬 Starting enhanced visual analysis...");
-    const visualAnalysis = await analyzeFullVideoFast(videoFile, transcription.text);
+    const visualAnalysis = await analyzeFullVideoFast(finalVideoFile, transcription.text);
 
     // Step 3: Enhanced Audio Analysis
     console.log("🎧 Starting enhanced audio analysis...");
-    const audioAnalysis = await enhancedAudioAnalysis(videoFile, transcription.text);
+    const audioAnalysis = await enhancedAudioAnalysis(finalVideoFile, transcription.text);
 
     // Step 4: Master Marketing Strategy
     console.log("🎯 Creating master marketing strategy...");
@@ -552,27 +581,55 @@ async function generateCustomPostDescription(visualAnalysis, audioAnalysis, busi
     console.log("📝 Generating custom post description...");
     
     const prompt = `
-תבסס על הניתוח המלא של הסרטון:
+אתה מומחה שיווק דיגיטלי עם ניסיון של 15+ שנים. צור טקסט פרסומת מקצועי ומשכנע.
 
+חשוב מאוד: התחל ישירות עם הכותרת ללא "### כותרת:" - פשוט כתוב את הכותרת עצמה!
+
+📊 נתוני הסרטון:
 ויזואל: ${JSON.stringify(visualAnalysis, null, 2)}
 אודיו: ${JSON.stringify(audioAnalysis, null, 2)}
-עסק: ${businessDescription}
-מטרה: ${campaignGoal}
 
-צור תיאור פוסט מותאם אישית (עד 200 מילים) שמשלב:
-1. את המסר העיקרי מהסרטון
-2. קריאה לפעולה מתאימה למטרה
-3. טון שמתאים לניתוח
-4. שימוש בהאשטגים רלוונטיים
+🏢 פרטי העסק:
+${businessDescription}
 
-השב בטקסט נקי בעברית.`;
+🎯 מטרת הקמפיין:
+${campaignGoal}
+
+📝 הוראות לטקסט הפרסומת:
+1. התחל עם כותרת מושכת (עד 10 מילים)
+2. צור טקסט פרסומת של 150-200 מילים שמשלב:
+   - את המסר העיקרי מהסרטון
+   - את ערך המוצר/שירות של העסק
+   - קריאה לפעולה ברורה ומשכנעת
+   - טון שמתאים לקהל היעד
+3. הוסף 3-5 האשטגים רלוונטיים
+4. השתמש באמוג'ים במידה
+
+חשוב מאוד: החזר רק את הטקסט הפרסומת עצמו ללא שום כותרות או הסברים. אסור לך להוסיף כותרות . אסור לך להוסיף "### כותרת:" או "### טקסט פרסומת:" או "### האשטגים:" או כל כותרת אחרת. פשוט כתוב את הטקסט הפרסומת עצמו, הטקסטאשטגים ברצף טבעי.
+
+השב בטקסט נקי בעברית, מקצועי ומשכנע.
+
+דוגמה לפלט הנכון:
+שמרו את הרגעים הכי יקרים לנצח 🌟
+
+הורים יקרים, הרגעים הראשונים של ילדינו הם יקרים מכל – הצעד הראשון, החיוך הראשון, המילה הראשונה. עם שירות העריכה של "המזכרת הראשונה שלהם", תוכלו לשמור את הזיכרונות החשובים האלו בצורה מקצועית ומרגשת.
+
+👶🏻 זכרו את הרגעים הראשונים של ילדיכם לנצח בעזרת Baby Step – שירות עריכה מתמחה במזכרות משפחתיות. אנו מבינים את החשיבות שבשמירת הרגעים הקטנים והיקרים האלה, והופכים אותם לזיכרונות בלתי נשכחים שילוו אתכם ואת ילדיכם לאורך כל החיים.
+
+#מזכרותמשפחתיות #BabyStep #זיכרונותבלתינשכחים #פחהשלכם #תיעודרגעים
+
+🌟 שמרו את הרגעים החשובים באמת - כי הם לא יחזרו לעולם!
+
+שים לב: אין כותרות כמו "### כותרת:" או "### טקסט פרסומת:" - רק הטקסט עצמו!
+
+התחל ישירות עם הכותרת ללא "### כותרת:" - פשוט כתוב את הכותרת עצמה!`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "אתה המשווק הכי טוב בעולם. תמיד תחזיר תיאור פוסט מקצועי, מפורט ומשכנע בעברית."
+          content: "אתה מומחה שיווק דיגיטלי מוביל עם ניסיון של 15+ שנים. אתה יודע ליצור טקסטי פרסומת משכנעים שמביאים תוצאות. תמיד תחזיר טקסט פרסומת מקצועי, מפורט ומשכנע בעברית שמתחשב בתיאור העסק ומטרת הקמפיין. אסור לך להוסיף כותרות כמו '### הכותרת:' או '### טקסט פרסומת:' או '### האשטגים:' - פשוט כתוב את הטקסט הפרסומת עצמו ללא שום כותרות או הסברים. התחל ישירות עם הכותרת ללא '### כותרת:' - פשוט כתוב את הכותרת עצמה! דוגמה לפלט נכון: 'שמרו את הרגעים הכי יקרים לנצח 🌟\n\nהורים יקרים...\n\n#מזכרותמשפחתיות #BabyStep' - ללא כותרות!"
         },
         {
           role: "user",
@@ -586,10 +643,19 @@ async function generateCustomPostDescription(visualAnalysis, audioAnalysis, busi
     return response.choices[0].message.content;
   } catch (error) {
     console.error('Error generating custom post description:', error);
-    return `🏢 ${businessDescription}
+    return `🚀 ${businessDescription}
+
+${businessDescription} מציעים לכם פתרון מושלם! 
+
 🎯 מטרת הקמפיין: ${campaignGoal}
 
-גלו את ההזדמנות הזו! 🚀 #שיווק #עסקים #AI #ניתוח_וידאו`;
+✅ למה לבחור בנו?
+• שירות מקצועי ואמין
+• תוצאות מוכחות
+• מחירים תחרותיים
+
+📞 צרו קשר עכשיו לקבלת הצעת מחיר!
+#${businessDescription.replace(/\s+/g, '_')} #${campaignGoal} #שיווק #עסקים`;
   }
 }
 
@@ -707,4 +773,58 @@ ${JSON.stringify(audioAnalysis, null, 2)}
 • אופטימיזציה למובייל
 • A/B testing`;
   }
+}
+
+// Video compression function for AI analysis
+async function compressVideoForAI(videoFile) {
+  return new Promise((resolve, reject) => {
+    console.log("🎬 Starting video compression for AI analysis...");
+    
+    const tempDir = require('os').tmpdir();
+    const compressedFilename = `compressed_${Date.now()}_${videoFile.originalFilename}`;
+    const compressedPath = path.join(tempDir, compressedFilename);
+
+    ffmpeg(videoFile.filepath)
+      .outputOptions([
+        '-c:v libx264',
+        '-crf 28',
+        '-preset fast',
+        '-c:a aac',
+        '-b:a 128k',
+        '-movflags +faststart',
+        '-maxrate 2M',
+        '-bufsize 4M'
+      ])
+      .output(compressedPath)
+      .on('start', (commandLine) => {
+        console.log('🎬 FFmpeg process started:', commandLine);
+      })
+      .on('progress', (progress) => {
+        console.log(`📊 Compression progress: ${progress.percent}% done`);
+      })
+      .on('end', () => {
+        console.log('✅ Video compression completed');
+        
+        const stats = fs.statSync(compressedPath);
+        const compressedFile = {
+          originalFilename: videoFile.originalFilename,
+          size: stats.size,
+          mimetype: 'video/mp4',
+          filepath: compressedPath,
+          compressed: true
+        };
+        
+        resolve({
+          compressedFile: compressedFile,
+          originalSize: videoFile.size,
+          compressedSize: stats.size,
+          compressionRatio: (videoFile.size / stats.size).toFixed(2)
+        });
+      })
+      .on('error', (err) => {
+        console.error('❌ FFmpeg error:', err);
+        reject(err);
+      })
+      .run();
+  });
 }

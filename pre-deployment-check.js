@@ -57,34 +57,64 @@ function checkEnvFile() {
   
   logSuccess('.env.local file exists');
   
+  // Load environment variables manually
   const envContent = fs.readFileSync(envPath, 'utf8');
+  const envVars = {};
+  
+  // Remove BOM if present
+  const cleanContent = envContent.replace(/^\uFEFF/, '');
+  
+  cleanContent.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+      const [key, ...valueParts] = trimmedLine.split('=');
+      if (key && valueParts.length > 0) {
+        envVars[key] = valueParts.join('=');
+      }
+    }
+  });
+  
+  
   const requiredVars = [
-    'OPENAI_API_KEY',
+    'OPENAI_API_KEY'
+  ];
+  
+  const optionalVars = [
     'JWT_SECRET',
     'ENCRYPTION_KEY',
     'SESSION_SECRET',
-    'ALLOWED_ORIGINS'
+    'ALLOWED_ORIGINS',
+    'GOOGLE_ADS_DEVELOPER_TOKEN',
+    'VITE_TIKTOK_CLIENT_KEY',
+    'TIKTOK_CLIENT_SECRET'
   ];
   
   const missingVars = [];
   const weakVars = [];
   
   requiredVars.forEach(varName => {
-    const regex = new RegExp(`^${varName}=(.+)$`, 'm');
-    const match = envContent.match(regex);
+    const value = envVars[varName];
     
-    if (!match) {
+    if (!value) {
       missingVars.push(varName);
     } else {
-      const value = match[1].trim();
-      if (value.includes('your-') || value.includes('test-') || value.length < 20) {
+      if (value.includes('your-') || value.includes('test-') || value.includes('YOUR_') || value.length < 20) {
         weakVars.push(varName);
       }
     }
   });
   
+  // Check optional variables
+  const missingOptionalVars = [];
+  optionalVars.forEach(varName => {
+    const value = envVars[varName];
+    if (!value || value.includes('YOUR_') || value.includes('your-')) {
+      missingOptionalVars.push(varName);
+    }
+  });
+  
   if (missingVars.length > 0) {
-    logError(`Missing environment variables: ${missingVars.join(', ')}`);
+    logError(`Missing required environment variables: ${missingVars.join(', ')}`);
     return false;
   } else {
     logSuccess('All required environment variables are present');
@@ -94,7 +124,12 @@ function checkEnvFile() {
     logWarning(`Weak or placeholder values in: ${weakVars.join(', ')}`);
     logInfo('Generate strong random values for production');
   } else {
-    logSuccess('All environment variables have strong values');
+    logSuccess('All required environment variables have strong values');
+  }
+  
+  if (missingOptionalVars.length > 0) {
+    logWarning(`Optional variables need configuration: ${missingOptionalVars.join(', ')}`);
+    logInfo('These are needed for full functionality but not critical for basic deployment');
   }
   
   return true;

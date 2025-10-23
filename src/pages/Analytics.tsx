@@ -222,7 +222,7 @@ const Analytics = () => {
         {/* Back Button */}
         <div className="mb-6 pt-16">
           <Button
-            onClick={() => window.location.href = '/'}
+            onClick={() => window.location.href = '/campaign'}
             variant="outline"
             className="border-2 border-gray-300 hover:bg-gray-50"
           >
@@ -725,7 +725,7 @@ const Analytics = () => {
               <h3 className="text-xl font-bold text-gray-800 mb-2">אין קמפיינים פעילים</h3>
               <p className="text-gray-600 mb-6">צור קמפיין ראשון כדי לראות אנליטיקה</p>
               <Button 
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = '/campaign'}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 <Zap className="h-4 w-4 mr-2" />

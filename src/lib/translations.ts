@@ -20,16 +20,16 @@ export const Translations = {
     problemsSubtitle: 'הבעיות הנפוצות ביותר בשיווק דיגיטלי',
 
     problem1Title: 'איך יודעים מה יעבוד?',
-    problem1Description: 'רוב הקמפיינים נכשלים כי לא יודעים מה הקהל רוצה לראות',
+    problem1Description: 'רוב הקמפיינים נכשלים כי לא יודעים מה הקהל רוצה לראות. אנחנו מנתחים את התוכן שלך עם AI מתקדם ומזהה את המסר, הסגנון והקהל המתאים',
 
     problem2Title: 'איך חוסכים זמן?',
-    problem2Description: 'יצירת תוכן איכותי לוקחת שעות וימים של עבודה',
+    problem2Description: 'העלאת פרסומת לכל פלטפורמה בנפרד לוקחת שעות של עבודה. אנחנו מעלים ומפרסמים בכל הפלטפורמות (פייסבוק, גוגל, טיקטוק) בבת אחת',
 
     problem3Title: 'איך מגיעים לקהל הנכון?',
-    problem3Description: 'הפצת תוכן לכל הפלטפורמות דורשת התאמה לכל אחת',
+    problem3Description: 'כל פלטפורמה דורשת התאמה שונה - פייסבוק, גוגל, טיקטוק. אנחנו יוצרים קמפיינים מותאמים לכל פלטפורמה אוטומטית',
 
     problem4Title: 'איך חוסכים כסף?',
-    problem4Description: 'קמפיינים לא יעילים שורפים תקציבים בלי תוצאות',
+    problem4Description: 'קמפיינים לא יעילים שורפים תקציבים בלי תוצאות. אנחנו יוצרים קמפיינים ממוקדים עם ניתוח מדויק של קהל יעד ותוכן מותאם',
 
     // Benefits Section
     benefit1Title: 'ניתוח תוכן חכם',
@@ -95,16 +95,16 @@ export const Translations = {
     problemsSubtitle: 'The most common problems in digital marketing',
 
     problem1Title: 'How do you know what will work?',
-    problem1Description: 'Most campaigns fail because you don\'t know what the audience wants to see',
+    problem1Description: 'Most campaigns fail because you don\'t know what the audience wants to see. We analyze your content with advanced AI and identify the message, style and target audience',
 
     problem2Title: 'How do you save time?',
-    problem2Description: 'Creating quality content takes hours and days of work',
+    problem2Description: 'Uploading ads to each platform separately takes hours of work. We upload and publish to all platforms (Facebook, Google, TikTok) at once',
 
     problem3Title: 'How do you reach the right audience?',
-    problem3Description: 'Distributing content to all platforms requires adaptation for each one',
+    problem3Description: 'Each platform requires different adaptation - Facebook, Google, TikTok. We create campaigns tailored to each platform automatically',
 
     problem4Title: 'How do you save money?',
-    problem4Description: 'Ineffective campaigns burn budgets without results',
+    problem4Description: 'Ineffective campaigns burn budgets without results. We create targeted campaigns with accurate audience analysis and tailored content',
 
     // Benefits Section
     benefit1Title: 'Smart Content Analysis',

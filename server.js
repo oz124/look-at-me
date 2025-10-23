@@ -184,6 +184,26 @@ app.post('/api/ai/analyze',
 );
 console.log("✅ analyze.js loaded with security");
 
+// Advanced AI Analysis endpoint with enhanced security
+console.log("📁 Loading advanced-analyze.js...");
+const advancedAnalyzeRoute = require('./api/ai/advanced-analyze');
+app.post('/api/ai/advanced-analyze', 
+  createRateLimit({ max: 10, windowMs: 15 * 60 * 1000 }), // 10 requests per 15 minutes (expensive operation)
+  SecurityMiddleware.validateAPIKey,
+  advancedAnalyzeRoute
+);
+console.log("✅ advanced-analyze.js loaded with security");
+
+// Video compression endpoint with enhanced security
+console.log("📁 Loading compress-video.js...");
+const compressVideoRoute = require('./api/ai/compress-video');
+app.post('/api/ai/compress-video', 
+  createRateLimit({ max: 5, windowMs: 15 * 60 * 1000 }), // 5 requests per 15 minutes (resource intensive)
+  SecurityMiddleware.validateAPIKey,
+  compressVideoRoute
+);
+console.log("✅ compress-video.js loaded with security");
+
 // Transcription endpoint with enhanced security
 console.log("📁 Loading transcribe.js...");
 const transcribeRoute = require('./api/ai/transcribe');
@@ -231,16 +251,6 @@ app.post('/api/platforms/tiktok/exchange-token',
   tiktokRoute
 );
 console.log("✅ tiktok/exchange-token.js loaded with security");
-
-// Advanced AI Analysis endpoint
-console.log("📁 Loading advanced-analyze.js...");
-const advancedAnalyzeRoute = require('./api/ai/advanced-analyze');
-app.post('/api/ai/advanced-analyze',
-  createRateLimit({ max: 10, windowMs: 15 * 60 * 1000 }), // 10 requests per 15 minutes
-  SecurityMiddleware.validateAPIKey,
-  advancedAnalyzeRoute
-);
-console.log("✅ advanced-analyze.js loaded with security");
 
 // Campaign Creation endpoint
 console.log("📁 Loading campaigns/create.js...");
