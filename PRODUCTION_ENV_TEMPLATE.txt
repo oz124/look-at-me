@@ -1,0 +1,132 @@
+# 🔒 Production Environment Configuration Template
+# 
+# ⚠️ IMPORTANT SECURITY INSTRUCTIONS:
+# 1. Copy this file to .env.local on your production server
+# 2. Replace ALL placeholder values with real secrets
+# 3. NEVER commit .env.local to git (it's in .gitignore)
+# 4. Generate strong random keys for JWT_SECRET, ENCRYPTION_KEY, SESSION_SECRET
+#
+# 📝 How to use on DigitalOcean:
+# 1. Upload this template to your server
+# 2. Run: cp PRODUCTION_ENV_TEMPLATE.txt .env.local
+# 3. Edit: nano .env.local
+# 4. Fill in all values below
+# 5. Set permissions: chmod 600 .env.local
+# 6. Restart server: pm2 restart all
+
+# ============================================
+# 🌍 Environment
+# ============================================
+NODE_ENV=production
+PORT=3002
+
+# ============================================
+# 🔐 Security Keys (MUST CHANGE!)
+# ============================================
+# Generate strong random keys with these commands:
+# openssl rand -base64 32
+# 
+# Or use this one-liner to generate all three:
+# echo "JWT_SECRET=$(openssl rand -base64 32)" && echo "ENCRYPTION_KEY=$(openssl rand -base64 32)" && echo "SESSION_SECRET=$(openssl rand -base64 32)"
+
+JWT_SECRET=REPLACE_WITH_STRONG_RANDOM_KEY_MIN_32_CHARS
+ENCRYPTION_KEY=REPLACE_WITH_STRONG_RANDOM_KEY_MIN_32_CHARS
+SESSION_SECRET=REPLACE_WITH_STRONG_RANDOM_KEY_MIN_32_CHARS
+
+# ============================================
+# 🤖 OpenAI Configuration
+# ============================================
+# Get your key from: https://platform.openai.com/api-keys
+OPENAI_API_KEY=sk-proj-YOUR-REAL-OPENAI-API-KEY-HERE
+
+# ============================================
+# 🗄️ MongoDB Configuration
+# ============================================
+# Get your connection string from MongoDB Atlas
+# Format: mongodb+srv://username:password@cluster.mongodb.net/dbname?retryWrites=true&w=majority
+# Remember to whitelist your server's IP in MongoDB Atlas!
+MONGODB_URI=mongodb+srv://YOUR-USERNAME:YOUR-PASSWORD@YOUR-CLUSTER.mongodb.net/lookatme?retryWrites=true&w=majority
+
+# ============================================
+# 🔥 Firebase Configuration (Frontend - Public)
+# ============================================
+# Get these from Firebase Console > Project Settings > Your Apps
+# Note: Firebase API keys are safe to be public (they're in the frontend anyway)
+VITE_FIREBASE_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789012
+VITE_FIREBASE_APP_ID=1:123456789012:web:abcdef1234567890
+VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+
+# ============================================
+# 📱 Facebook Configuration
+# ============================================
+# Get from: https://developers.facebook.com/apps
+# VITE_* = public (frontend), others = secret (backend only)
+VITE_FACEBOOK_APP_ID=your-facebook-app-id-here
+FACEBOOK_APP_SECRET=your-facebook-app-secret-here-KEEP-SECRET
+
+# ============================================
+# 🔍 Google Ads Configuration
+# ============================================
+# Get from: https://console.cloud.google.com/apis/credentials
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret-here-KEEP-SECRET
+VITE_GOOGLE_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# ============================================
+# 🎵 TikTok Configuration
+# ============================================
+# Get from: https://developers.tiktok.com/
+VITE_TIKTOK_CLIENT_KEY=your-tiktok-client-key-here
+TIKTOK_CLIENT_SECRET=your-tiktok-client-secret-here-KEEP-SECRET
+
+# ============================================
+# 🌐 CORS Configuration
+# ============================================
+# Add your production domains (comma-separated, NO SPACES!)
+# Example: ALLOWED_ORIGINS=https://lookatme.site,https://www.lookatme.site
+ALLOWED_ORIGINS=https://lookatme.site,https://www.lookatme.site,https://yourdomain.com
+
+# ============================================
+# ⏱️ Rate Limiting
+# ============================================
+# 900000 ms = 15 minutes
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# ============================================
+# 📊 Monitoring & Logging
+# ============================================
+LOG_LEVEL=info
+ENABLE_SECURITY_LOGGING=true
+
+# ============================================
+# 🔑 API Keys for Backend Validation
+# ============================================
+# Generate strong random keys for internal API validation
+# You can generate with: openssl rand -hex 32
+VALID_API_KEYS=your-internal-api-key-1,your-internal-api-key-2
+
+# ============================================
+# ✅ DEPLOYMENT CHECKLIST
+# ============================================
+# Before going live, verify:
+# [ ] All REPLACE_WITH values have been changed
+# [ ] All YOUR values have been replaced with real ones
+# [ ] JWT_SECRET is at least 32 characters long
+# [ ] ENCRYPTION_KEY is at least 32 characters long
+# [ ] SESSION_SECRET is at least 32 characters long
+# [ ] MONGODB_URI connects successfully (test with: mongosh "YOUR_URI")
+# [ ] Firebase credentials are correct and match Firebase Console
+# [ ] ALLOWED_ORIGINS includes ALL your production domains
+# [ ] HTTPS is enabled on your server (test: curl https://yourdomain.com)
+# [ ] This file is copied to .env.local on server
+# [ ] File permissions are secure: chmod 600 .env.local
+# [ ] No secrets are hardcoded in the source code
+# [ ] Server has been restarted: pm2 restart all
+# [ ] Firebase Authorized Domains includes your domain
+# [ ] MongoDB IP whitelist includes your server IP
+

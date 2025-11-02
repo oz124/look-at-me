@@ -6,6 +6,9 @@ import { Translations } from '@/lib/translations';
 import { useSettings } from '@/lib/settings-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslations } from '@/hooks/useTranslations';
+import { useAuth } from '@/lib/auth-context';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase-config';
 
 import {
   ArrowRight,
@@ -107,86 +110,76 @@ import {
   Menu,
 } from 'lucide-react';
 
-// FAQ Data
-const faqData = [
+// FAQ Data - using translations
+const getFaqData = (t: (key: string) => string) => [
   {
-    question: 'איך האפליקציה מנתחת את התוכן שלי?',
-    answer:
-      'האפליקציה משתמשת בבינה מלאכותית מתקדמת לניתוח וידאו, תמונות ושמע. היא מזהה צבעים, תאורה, מוזיקה, טקסט, רגשות ועוד רכיבים רבים כדי להבין את המסר והסגנון של התוכן שלך.',
+    question: t('faqQuestion1'),
+    answer: t('faqAnswer1'),
   },
   {
-    question: 'האם הנתונים שלי מאובטחים?',
-    answer:
-      'כן, אנו משתמשים בהצפנה מתקדמת ברמת בנקים להגנה על הנתונים שלך. כל התוכן מאוחסן בשרתים מאובטחים ואף אחד לא יכול לגשת אליו מלבדך.',
+    question: t('faqQuestion2'),
+    answer: t('faqAnswer2'),
   },
   {
-    question: 'כמה זמן לוקח לקבל המלצות?',
-    answer:
-      'הניתוח והמלצות מתקבלות תוך 2-5 דקות ממועד העלאת התוכן, תלוי באורך ובמורכבות של הקובץ.',
+    question: t('faqQuestion3'),
+    answer: t('faqAnswer3'),
   },
   {
-    question: 'אילו פלטפורמות נתמכות?',
-    answer:
-      'כרגע אנו תומכים בפייסבוק, אינסטגרם, גוגל וטיקטוק. בקרוב נוסיף תמיכה בטוויטר ופלטפורמות נוספות.',
+    question: t('faqQuestion4'),
+    answer: t('faqAnswer4'),
   },
   {
-    question: 'האם יש ניסיון חינם?',
-    answer:
-      'כן! אתה יכול לנתח עד 3 קבצים חינם לפני שתחליט אם להירשם למנוי. לא נדרשים פרטי כרטיס אשראי.',
+    question: t('faqQuestion5'),
+    answer: t('faqAnswer5'),
   },
   {
-    question: 'איך אני יכול לבטל את המנוי?',
-    answer:
-      'ניתן לבטל את המנוי בכל עת דרך הגדרות החשבון. הביטול יכנס לתוקף בסוף התקופה ששולמה.',
+    question: t('faqQuestion6'),
+    answer: t('faqAnswer6'),
   },
   {
-    question: 'האם האפליקציה עובדת על כל המכשירים?',
-    answer:
-      'כן, האפליקציה עובדת על מחשבים, טאבלטים וסמארטפונים עם כל הדפדפנים המודרניים.',
-  },
-  {
-    question: 'איך יוצרים קשר לתמיכה?',
-    answer:
-      "ניתן ליצור קשר דרך המייל marketing@lookatme.site או דרך הצ'אט בתוך האפליקציה. אנו זמינים 24/7.",
+    question: t('faqQuestion7'),
+    answer: t('faqAnswer7'),
   },
 ];
 
-// FAQ Modal Component
-const FAQModal = ({ isOpen, onClose, openFAQItem, setOpenFAQItem }) => {
+// FAQ Modal Component - Mobile Responsive
+const FAQModal = ({ isOpen, onClose, openFAQItem, setOpenFAQItem, t }) => {
   if (!isOpen) return null;
+  
+  const faqData = getFaqData(t);
 
   return (
-    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-      <div className='bg-white rounded-2xl max-w-4xl max-h-[80vh] overflow-hidden shadow-2xl'>
-        <div className='flex items-center justify-between p-6 border-b border-gray-200'>
-          <h2 className='text-2xl font-bold text-gray-800'>שאלות נפוצות</h2>
-          <Button variant='ghost' onClick={onClose} className='p-2'>
-            <X className='h-5 w-5' />
+    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4'>
+      <div className='bg-white rounded-xl md:rounded-2xl max-w-4xl w-full max-h-[90vh] md:max-h-[80vh] overflow-hidden shadow-2xl'>
+        <div className='flex items-center justify-between p-4 sm:p-6 border-b border-gray-200'>
+          <h2 className='text-lg sm:text-xl md:text-2xl font-bold text-gray-800'>{t('faq')}</h2>
+          <Button variant='ghost' onClick={onClose} className='p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg'>
+            <X className='h-5 w-5 md:h-6 md:w-6' />
           </Button>
         </div>
-        <div className='p-6 overflow-y-auto max-h-[60vh] text-right' dir='rtl'>
-          <div className='space-y-4'>
+        <div className='p-4 sm:p-6 overflow-y-auto max-h-[70vh] md:max-h-[60vh] text-right' dir='rtl'>
+          <div className='space-y-3 md:space-y-4'>
             {faqData.map((item, index) => (
               <Card key={index} className='border border-gray-200'>
                 <CardContent className='p-0'>
                   <Button
                     variant='ghost'
-                    className='w-full p-6 text-right justify-between h-auto'
+                    className='w-full p-4 sm:p-5 md:p-6 text-right justify-between h-auto'
                     onClick={() =>
                       setOpenFAQItem(openFAQItem === index ? null : index)
                     }
                   >
-                    <span className='font-medium text-gray-800'>
+                    <span className='font-medium text-gray-800 text-sm sm:text-base text-right flex-1'>
                       {item.question}
                     </span>
                     {openFAQItem === index ? (
-                      <ChevronUp className='h-5 w-5' />
+                      <ChevronUp className='h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 mr-2' />
                     ) : (
-                      <ChevronDown className='h-5 w-5' />
+                      <ChevronDown className='h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 mr-2' />
                     )}
                   </Button>
                   {openFAQItem === index && (
-                    <div className='px-6 pb-6 text-gray-600 leading-relaxed border-t border-gray-100'>
+                    <div className='px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6 text-gray-600 leading-relaxed border-t border-gray-100 text-sm sm:text-base'>
                       {item.answer}
                     </div>
                   )}
@@ -200,83 +193,83 @@ const FAQModal = ({ isOpen, onClose, openFAQItem, setOpenFAQItem }) => {
   );
 };
 
-// Help Modal Component
+// Help Modal Component - Mobile Responsive
 const HelpModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-      <div className='bg-white rounded-2xl max-w-5xl max-h-[80vh] overflow-hidden shadow-2xl'>
-        <div className='flex items-center justify-between p-6 border-b border-gray-200'>
-          <h2 className='text-2xl font-bold text-gray-800'>מרכז עזרה</h2>
-          <Button variant='ghost' onClick={onClose} className='p-2'>
-            <X className='h-5 w-5' />
+    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4'>
+      <div className='bg-white rounded-xl md:rounded-2xl max-w-5xl w-full max-h-[90vh] md:max-h-[80vh] overflow-hidden shadow-2xl'>
+        <div className='flex items-center justify-between p-4 sm:p-6 border-b border-gray-200'>
+          <h2 className='text-lg sm:text-xl md:text-2xl font-bold text-gray-800'>מרכז עזרה</h2>
+          <Button variant='ghost' onClick={onClose} className='p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg'>
+            <X className='h-5 w-5 md:h-6 md:w-6' />
           </Button>
         </div>
-        <div className='p-6 overflow-y-auto max-h-[60vh] text-right' dir='rtl'>
-          <div className='grid md:grid-cols-2 gap-6'>
+        <div className='p-4 sm:p-6 overflow-y-auto max-h-[70vh] md:max-h-[60vh] text-right' dir='rtl'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6'>
             <Card className='cursor-pointer hover:shadow-lg transition-shadow'>
-              <CardContent className='p-6 text-center'>
-                <CloudUpload className='h-12 w-12 text-blue-600 mx-auto mb-4' />
-                <h3 className='text-lg font-bold text-gray-800 mb-2'>
+              <CardContent className='p-4 sm:p-5 md:p-6 text-center'>
+                <CloudUpload className='h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3 md:mb-4' />
+                <h3 className='text-base sm:text-lg font-bold text-gray-800 mb-2'>
                   העלאת קבצים
                 </h3>
-                <p className='text-gray-600 text-sm'>
+                <p className='text-gray-600 text-xs sm:text-sm'>
                   למד איך להעלות וידאו, תמונות ושמע לניתוח
                 </p>
               </CardContent>
             </Card>
 
             <Card className='cursor-pointer hover:shadow-lg transition-shadow'>
-              <CardContent className='p-6 text-center'>
-                <Brain className='h-12 w-12 text-purple-600 mx-auto mb-4' />
-                <h3 className='text-lg font-bold text-gray-800 mb-2'>
+              <CardContent className='p-4 sm:p-5 md:p-6 text-center'>
+                <Brain className='h-10 w-10 sm:h-12 sm:w-12 text-purple-600 mx-auto mb-3 md:mb-4' />
+                <h3 className='text-base sm:text-lg font-bold text-gray-800 mb-2'>
                   הבנת התוצאות
                 </h3>
-                <p className='text-gray-600 text-sm'>
+                <p className='text-gray-600 text-xs sm:text-sm'>
                   איך לפרש את ההמלצות וליישם אותן
                 </p>
               </CardContent>
             </Card>
 
             <Card className='cursor-pointer hover:shadow-lg transition-shadow'>
-              <CardContent className='p-6 text-center'>
-                <Target className='h-12 w-12 text-green-600 mx-auto mb-4' />
-                <h3 className='text-lg font-bold text-gray-800 mb-2'>
+              <CardContent className='p-4 sm:p-5 md:p-6 text-center'>
+                <Target className='h-10 w-10 sm:h-12 sm:w-12 text-green-600 mx-auto mb-3 md:mb-4' />
+                <h3 className='text-base sm:text-lg font-bold text-gray-800 mb-2'>
                   קהל יעד
                 </h3>
-                <p className='text-gray-600 text-sm'>
+                <p className='text-gray-600 text-xs sm:text-sm'>
                   איך לזהות ולהגיע לקהל הנכון
                 </p>
               </CardContent>
             </Card>
 
             <Card className='cursor-pointer hover:shadow-lg transition-shadow'>
-              <CardContent className='p-6 text-center'>
-                <Rocket className='h-12 w-12 text-red-600 mx-auto mb-4' />
-                <h3 className='text-lg font-bold text-gray-800 mb-2'>
+              <CardContent className='p-4 sm:p-5 md:p-6 text-center'>
+                <Rocket className='h-10 w-10 sm:h-12 sm:w-12 text-red-600 mx-auto mb-3 md:mb-4' />
+                <h3 className='text-base sm:text-lg font-bold text-gray-800 mb-2'>
                   שיגור קמפיינים
                 </h3>
-                <p className='text-gray-600 text-sm'>
+                <p className='text-gray-600 text-xs sm:text-sm'>
                   מהעלאה ועד פרסום בפלטפורמות
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          <div className='mt-8 bg-blue-50 p-6 rounded-xl'>
-            <h3 className='text-lg font-bold text-blue-800 mb-3'>
+          <div className='mt-6 md:mt-8 bg-blue-50 p-4 sm:p-5 md:p-6 rounded-xl'>
+            <h3 className='text-base sm:text-lg font-bold text-blue-800 mb-2 md:mb-3'>
               זקוק לעזרה נוספת?
             </h3>
-            <p className='text-blue-700 mb-4'>הצוות שלנו זמין 24/7 לעזור לך</p>
-            <div className='flex space-x-4'>
-              <Button className='bg-blue-600 hover:bg-blue-700'>
+            <p className='text-sm sm:text-base text-blue-700 mb-3 md:mb-4'>הצוות שלנו זמין 24/7 לעזור לך</p>
+            <div className='flex flex-col sm:flex-row gap-3 sm:gap-4'>
+              <Button className='w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-sm sm:text-base'>
                 <MessageSquare className='h-4 w-4 ml-2' />
                 צ'אט חי
               </Button>
               <Button
                 variant='outline'
-                className='border-blue-600 text-blue-600'
+                className='w-full sm:w-auto border-blue-600 text-blue-600 text-sm sm:text-base'
               >
                 <Mail className='h-4 w-4 ml-2' />
                 שלח מייל
@@ -289,29 +282,29 @@ const HelpModal = ({ isOpen, onClose }) => {
   );
 };
 
-// Terms Modal Component
-const TermsModal = ({ isOpen, onClose }) => {
+// Terms Modal Component - Mobile Responsive
+const TermsModal = ({ isOpen, onClose, t }) => {
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-      <div className='bg-white rounded-2xl max-w-4xl max-h-[80vh] overflow-hidden shadow-2xl'>
-        <div className='flex items-center justify-between p-6 border-b border-gray-200'>
-          <h2 className='text-2xl font-bold text-gray-800'>תנאי שימוש</h2>
-          <Button variant='ghost' onClick={onClose} className='p-2'>
-            <X className='h-5 w-5' />
+    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4'>
+      <div className='bg-white rounded-xl md:rounded-2xl max-w-4xl w-full max-h-[90vh] md:max-h-[80vh] overflow-hidden shadow-2xl'>
+        <div className='flex items-center justify-between p-4 sm:p-6 border-b border-gray-200'>
+          <h2 className='text-lg sm:text-xl md:text-2xl font-bold text-gray-800'>{t('termsOfService')}</h2>
+          <Button variant='ghost' onClick={onClose} className='p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg'>
+            <X className='h-5 w-5 md:h-6 md:w-6' />
           </Button>
         </div>
-        <div className='p-6 overflow-y-auto max-h-[60vh] text-right' dir='rtl'>
-          <div className='space-y-6 text-gray-700 leading-relaxed'>
-            <div className='bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6'>
-              <p className='text-blue-800 text-sm'>
+        <div className='p-4 sm:p-6 overflow-y-auto max-h-[70vh] md:max-h-[60vh] text-right' dir='rtl'>
+          <div className='space-y-4 md:space-y-6 text-gray-700 leading-relaxed text-sm sm:text-base'>
+            <div className='bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200 mb-4 md:mb-6'>
+              <p className='text-blue-800 text-xs sm:text-sm'>
                 <strong>תאריך עדכון אחרון:</strong> 1 בינואר 2025
               </p>
             </div>
 
             <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+              <h3 className='text-lg sm:text-xl font-bold text-gray-800 mb-2 md:mb-3'>
                 תנאי שירות
               </h3>
               <p className='mb-4'>
@@ -585,30 +578,30 @@ const TermsModal = ({ isOpen, onClose }) => {
   );
 };
 
-// Privacy Modal Component
-const PrivacyModal = ({ isOpen, onClose }) => {
+// Privacy Modal Component - Mobile Responsive
+const PrivacyModal = ({ isOpen, onClose, t }) => {
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-      <div className='bg-white rounded-2xl max-w-4xl max-h-[80vh] overflow-hidden shadow-2xl'>
-        <div className='flex items-center justify-between p-6 border-b border-gray-200'>
-          <h2 className='text-2xl font-bold text-gray-800'>מדיניות פרטיות</h2>
-          <Button variant='ghost' onClick={onClose} className='p-2'>
-            <X className='h-5 w-5' />
+    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4'>
+      <div className='bg-white rounded-xl md:rounded-2xl max-w-4xl w-full max-h-[90vh] md:max-h-[80vh] overflow-hidden shadow-2xl'>
+        <div className='flex items-center justify-between p-4 sm:p-6 border-b border-gray-200'>
+          <h2 className='text-lg sm:text-xl md:text-2xl font-bold text-gray-800'>{t('privacyPolicy')}</h2>
+          <Button variant='ghost' onClick={onClose} className='p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg'>
+            <X className='h-5 w-5 md:h-6 md:w-6' />
           </Button>
         </div>
-        <div className='p-6 overflow-y-auto max-h-[60vh] text-right' dir='rtl'>
-          <div className='space-y-6 text-gray-700 leading-relaxed'>
-            <div className='bg-green-50 p-4 rounded-lg border border-green-200 mb-6'>
-              <p className='text-green-800 text-sm'>
+        <div className='p-4 sm:p-6 overflow-y-auto max-h-[70vh] md:max-h-[60vh] text-right' dir='rtl'>
+          <div className='space-y-4 md:space-y-6 text-gray-700 leading-relaxed text-sm sm:text-base'>
+            <div className='bg-green-50 p-3 sm:p-4 rounded-lg border border-green-200 mb-4 md:mb-6'>
+              <p className='text-green-800 text-xs sm:text-sm'>
                 <strong>תאריך עדכון אחרון:</strong> 1 בינואר 2025 |{' '}
                 <strong>תוקף:</strong> החל מיום השימוש הראשון
               </p>
             </div>
 
             <section>
-              <h3 className='text-xl font-bold text-gray-800 mb-3'>
+              <h3 className='text-lg sm:text-xl font-bold text-gray-800 mb-2 md:mb-3'>
                 מבוא ועדכונים
               </h3>
               <p>
@@ -841,6 +834,7 @@ const PrivacyModal = ({ isOpen, onClose }) => {
 const Index = () => {
   const { settings } = useSettings();
   const { t, changeLanguage, isRTL } = useTranslations();
+  const { currentUser } = useAuth();
   useTheme(); // Apply theme settings
   const [hoveredFeature, setHoveredFeature] = useState(null);
   const [hoveredStat, setHoveredStat] = useState(null);
@@ -855,6 +849,24 @@ const Index = () => {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (currentUser?.displayName) return currentUser.displayName;
+    if (currentUser?.email) return currentUser.email.split('@')[0];
+    return 'משתמש';
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('connectedPlatforms');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   // Function to navigate to auth page
   const navigateToAuth = () => {
     window.location.href = '/auth';
@@ -862,8 +874,12 @@ const Index = () => {
 
   // Function to navigate to campaign creation (requires auth)
   const navigateToCampaign = () => {
-    alert('יש ליצור חשבון תחילה כדי לגשת ליצירת קמפיינים');
-    window.location.href = '/auth';
+    if (currentUser) {
+      window.location.href = '/campaign';
+    } else {
+      alert(t('requireAccountMessage'));
+      window.location.href = '/auth';
+    }
   };
 
   // Function to scroll to pricing section
@@ -993,61 +1009,61 @@ const Index = () => {
       className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 overflow-hidden'
       dir={settings.direction}
     >
-      {/* Enhanced Header */}
+      {/* Enhanced Header - Mobile Responsive */}
       <header
-        className='fixed top-0 left-0 right-0 z-50 py-4 transition-all duration-300'
+        className='fixed top-0 left-0 right-0 z-50 py-2 md:py-4 transition-all duration-300'
         id='header'
       >
-        <div className='container max-w-6xl mx-auto px-6'>
-          <div className='bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100 px-6 py-4 transition-all duration-300'>
+        <div className='container max-w-6xl mx-auto px-3 md:px-6'>
+          <div className='bg-white/95 backdrop-blur-md rounded-xl md:rounded-2xl shadow-lg border border-gray-100 px-3 md:px-6 py-3 md:py-4 transition-all duration-300'>
             <div className='flex items-center justify-between'>
-              {/* Enhanced Logo */}
-              <div className='flex items-center space-x-3 group cursor-pointer'>
-                <div className='w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-md relative overflow-hidden group-hover:shadow-lg transition-all duration-300 transform group-hover:scale-105'>
-                  <span className='text-white font-bold text-lg z-10'>L</span>
+              {/* Enhanced Logo - Mobile Responsive */}
+              <div className='flex items-center space-x-2 md:space-x-3 group cursor-pointer'>
+                <div className='w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-lg md:rounded-xl flex items-center justify-center shadow-md relative overflow-hidden group-hover:shadow-lg transition-all duration-300 transform group-hover:scale-105'>
+                  <span className='text-white font-bold text-base md:text-lg z-10'>L</span>
                 </div>
                 <div className='group-hover:translate-x-1 transition-transform duration-300'>
-                  <span className='text-xl font-bold text-gray-900'>
+                  <span className='text-base md:text-xl font-bold text-gray-900'>
                     LOOK AT ME
                   </span>
-                  <div className='text-xs text-gray-500 mt-0.5 font-medium'>
+                  <div className='hidden sm:block text-xs text-gray-500 mt-0.5 font-medium'>
                     AI Marketing Platform
                   </div>
                 </div>
               </div>
 
-              {/* Enhanced Navigation */}
-              <nav className='hidden md:flex items-center gap-8'>
+              {/* Enhanced Navigation - Desktop Only */}
+              <nav className='hidden lg:flex items-center gap-4 xl:gap-8'>
                 <Button
                   variant='ghost'
-                  className='text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm'
+                  className='text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 xl:px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm'
                   onClick={scrollToPricing}
                 >
                   {t('pricing')}
                 </Button>
                 <Button
                   variant='ghost'
-                  className='text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm'
+                  className='text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 xl:px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm'
                   onClick={() => setShowHelp(true)}
                 >
                   {t('help')}
                 </Button>
                 <Button
                   variant='ghost'
-                  className='text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm'
+                  className='text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 xl:px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm'
                   onClick={() => setShowFAQ(true)}
                 >
                   {t('faq')}
                 </Button>
 
-                {/* Language Dropdown */}
-                <div className='relative language-dropdown'>
+                {/* Language Dropdown - Desktop */}
+                <div className='relative language-dropdown hidden lg:block'>
                   <Button
                     variant='ghost'
-                    className='flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-xl p-2.5 shadow-sm border border-gray-200/50 hover:bg-white/90 transition-all duration-200'
+                    className='flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 xl:p-2.5 shadow-sm border border-gray-200/50 hover:bg-white/90 transition-all duration-200'
                     onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                   >
-                    <Globe className='h-4 w-4 text-blue-600' />
+                    <Globe className='h-3.5 w-3.5 xl:h-4 xl:w-4 text-blue-600' />
                     <span className='text-sm font-medium text-gray-700'>
                       {isRTL ? 'ע' : 'EN'}
                     </span>
@@ -1083,95 +1099,171 @@ const Index = () => {
                   )}
                 </div>
 
-                <Button
-                  variant='outline'
-                  className='text-gray-700 border-gray-300 hover:bg-gray-50 rounded-xl transition-all duration-200 px-5 py-2.5 border font-medium text-sm'
-                  onClick={navigateToAuth}
-                >
-                  {t('signIn')}
-                </Button>
-                <Button
-                  className='bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-6 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 font-medium text-sm'
-                  onClick={navigateToCampaign}
-                >
-                  {t('startCampaign')}
-                </Button>
+                {currentUser ? (
+                  <>
+                    <span className='hidden xl:flex text-gray-700 px-4 py-2.5 font-medium text-sm'>
+                      שלום, {getUserDisplayName()}
+                    </span>
+                    <Button
+                      variant='outline'
+                      className='hidden xl:flex text-gray-700 border-gray-300 hover:bg-gray-50 rounded-xl transition-all duration-200 px-4 xl:px-5 py-2.5 border font-medium text-sm'
+                      onClick={handleLogout}
+                    >
+                      התנתק
+                    </Button>
+                    <Button
+                      className='bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-4 xl:px-6 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 font-medium text-sm'
+                      onClick={navigateToCampaign}
+                    >
+                      {t('startCampaign')}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant='outline'
+                      className='hidden xl:flex text-gray-700 border-gray-300 hover:bg-gray-50 rounded-xl transition-all duration-200 px-4 xl:px-5 py-2.5 border font-medium text-sm'
+                      onClick={navigateToAuth}
+                    >
+                      {t('signIn')}
+                    </Button>
+                    <Button
+                      className='bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-4 xl:px-6 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 font-medium text-sm'
+                      onClick={navigateToCampaign}
+                    >
+                      {t('startCampaign')}
+                    </Button>
+                  </>
+                )}
               </nav>
 
-              {/* Mobile menu button */}
-              <div className='md:hidden flex items-center space-x-2'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='text-blue-600 border-blue-600 hover:bg-blue-50 rounded-lg'
-                  onClick={navigateToAuth}
-                >
-                  {t('signIn')}
-                </Button>
+              {/* Mobile menu button - Improved */}
+              <div className='lg:hidden flex items-center space-x-2'>
+                {currentUser ? (
+                  <>
+                    <span className='text-xs md:text-sm text-gray-700 font-medium'>
+                      {getUserDisplayName()}
+                    </span>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='text-red-600 border-red-600 hover:bg-red-50 rounded-lg text-xs md:text-sm px-2 md:px-3'
+                      onClick={handleLogout}
+                    >
+                      התנתק
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='text-blue-600 border-blue-600 hover:bg-blue-50 rounded-lg text-xs md:text-sm px-2 md:px-3'
+                    onClick={navigateToAuth}
+                  >
+                    {t('signIn')}
+                  </Button>
+                )}
                 <Button
                   variant='ghost'
+                  size='sm'
+                  className='p-2'
                   onClick={() => setShowMobileMenu(!showMobileMenu)}
                 >
-                  <Menu className='h-5 w-5' />
+                  <Menu className='h-5 w-5 md:h-6 md:w-6' />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Mobile Menu */}
+          {/* Mobile Menu - Improved Responsive */}
           {showMobileMenu && (
-            <div className='md:hidden mt-4 border-t border-gray-200 pt-4'>
+            <div className='lg:hidden mt-3 bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 p-4'>
               <div className='space-y-2'>
-                <Button variant='ghost' className='w-full text-right'>
+                <Button 
+                  variant='ghost' 
+                  className='w-full text-right justify-end text-base py-3 hover:bg-blue-50 hover:text-blue-600'
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                  }}
+                >
                   {t('features')}
                 </Button>
                 <Button
                   variant='ghost'
-                  className='w-full text-right'
-                  onClick={scrollToPricing}
+                  className='w-full text-right justify-end text-base py-3 hover:bg-blue-50 hover:text-blue-600'
+                  onClick={() => {
+                    scrollToPricing();
+                    setShowMobileMenu(false);
+                  }}
                 >
                   {t('pricing')}
                 </Button>
                 <Button
                   variant='ghost'
-                  className='w-full text-right'
-                  onClick={() => setShowHelp(true)}
+                  className='w-full text-right justify-end text-base py-3 hover:bg-blue-50 hover:text-blue-600'
+                  onClick={() => {
+                    setShowHelp(true);
+                    setShowMobileMenu(false);
+                  }}
                 >
                   {t('help')}
                 </Button>
                 <Button
                   variant='ghost'
-                  className='w-full text-right'
-                  onClick={() => setShowFAQ(true)}
+                  className='w-full text-right justify-end text-base py-3 hover:bg-blue-50 hover:text-blue-600'
+                  onClick={() => {
+                    setShowFAQ(true);
+                    setShowMobileMenu(false);
+                  }}
                 >
                   {t('faq')}
                 </Button>
 
-                {/* Mobile Language Switcher */}
-                <div className='flex items-center justify-center space-x-2 pt-4 border-t border-gray-200'>
+                {/* Mobile Language Switcher - Enhanced */}
+                <div className='flex items-center justify-center space-x-3 pt-4 border-t border-gray-200 mt-4'>
                   <span className='text-sm text-gray-600 font-medium'>
                     {t('language')}:
                   </span>
                   <button
-                    onClick={() => changeLanguage('hebrew')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    onClick={() => {
+                      changeLanguage('hebrew');
+                      setShowMobileMenu(false);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 min-w-[60px] ${
                       isRTL
                         ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
-                        : 'text-blue-600 hover:bg-blue-50'
+                        : 'text-blue-600 hover:bg-blue-50 border border-blue-200'
                     }`}
                   >
-                    
+                    עב
                   </button>
                   <button
-                    onClick={() => changeLanguage('english')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    onClick={() => {
+                      changeLanguage('english');
+                      setShowMobileMenu(false);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 min-w-[60px] ${
                       !isRTL
                         ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
-                        : 'text-blue-600 hover:bg-blue-50'
+                        : 'text-blue-600 hover:bg-blue-50 border border-blue-200'
                     }`}
                   >
                     EN
                   </button>
+                </div>
+
+                {/* Mobile CTA Button */}
+                <div className='pt-4'>
+                  <Button
+                    size='lg'
+                    className='w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white py-4 text-base rounded-xl shadow-lg'
+                    onClick={() => {
+                      navigateToCampaign();
+                      setShowMobileMenu(false);
+                    }}
+                  >
+                    {t('startCampaign')}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1179,29 +1271,29 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Hero Section + 4 חוזקות מרכזיות - באותו סקשן */}
-      <section className='pt-32 pb-24 px-4 relative overflow-hidden bg-gradient-to-b from-white via-blue-50/30 to-slate-50'>
+      {/* Hero Section + 4 חוזקות מרכזיות - Mobile Responsive */}
+      <section className='pt-24 sm:pt-28 md:pt-32 pb-12 md:pb-24 px-3 sm:px-4 relative overflow-hidden bg-gradient-to-b from-white via-blue-50/30 to-slate-50'>
         <div className='container max-w-7xl mx-auto'>
-          {/* Hero Content */}
-          <div className='text-center mb-20'>
-            <h1 className='text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight'>
+          {/* Hero Content - Mobile Optimized */}
+          <div className='text-center mb-12 md:mb-20'>
+            <h1 className='text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mb-4 md:mb-8 leading-tight px-2'>
               {t('heroTitle')}
             </h1>
 
-            <p className='text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed'>
+            <p className='text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-8 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4'>
               {t('heroSubtitle')}
             </p>
 
-            {/* Enhanced CTA Buttons */}
-            <div className='flex flex-col sm:flex-row gap-6 justify-center mb-20'>
+            {/* Enhanced CTA Buttons - Mobile Responsive */}
+            <div className='flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-12 md:mb-20 px-4'>
               <Button
                 size='lg'
-                className='bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-12 py-6 text-xl rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-110 hover:-translate-y-1 relative overflow-hidden group'
+                className='w-full sm:w-auto bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-8 sm:px-10 md:px-12 py-4 md:py-6 text-base md:text-lg lg:text-xl rounded-xl md:rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-105 md:hover:scale-110 hover:-translate-y-1 relative overflow-hidden group'
                 onClick={navigateToAuth}
               >
                 <div className='absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500'></div>
-                <span className='relative z-10 flex items-center'>
-                  <Users className='ml-3 h-6 w-6' />
+                <span className='relative z-10 flex items-center justify-center'>
+                  <Users className='ml-2 md:ml-3 h-5 w-5 md:h-6 md:w-6' />
                   {t('createAccount')}
                 </span>
               </Button>
@@ -1209,36 +1301,37 @@ const Index = () => {
               <Button
                 size='lg'
                 variant='outline'
-                className='border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-12 py-6 text-xl rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-110 hover:-translate-y-1 bg-white/90 backdrop-blur-sm'
+                className='w-full sm:w-auto border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 sm:px-10 md:px-12 py-4 md:py-6 text-base md:text-lg lg:text-xl rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105 md:hover:scale-110 hover:-translate-y-1 bg-white/90 backdrop-blur-sm'
                 onClick={navigateToCampaign}
               >
-                <span className='relative z-10 flex items-center'>
-                  <Rocket className='ml-3 h-6 w-6' />
-                  {t('createAccount')}
+                <span className='relative z-10 flex items-center justify-center'>
+                  <Rocket className='ml-2 md:ml-3 h-5 w-5 md:h-6 md:w-6' />
+                  {t('startCampaign')}
                 </span>
               </Button>
             </div>
           </div>
 
-          <div className='grid lg:grid-cols-2 gap-8'>
+          {/* Strengths Grid - Mobile Responsive */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8'>
             {appStrengths.map((strength, index) => (
               <Card
                 key={index}
                 className='group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] hover:-translate-y-1 bg-white/95 backdrop-blur-sm'
               >
-                <CardContent className='p-8 relative z-10'>
-                  <div className='flex items-start space-x-6'>
+                <CardContent className='p-4 sm:p-6 md:p-8 relative z-10'>
+                  <div className='flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4 md:space-x-6'>
                     <div
-                      className={`w-20 h-20 bg-gradient-to-r ${strength.gradient} rounded-3xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-500 relative overflow-hidden`}
+                      className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-to-r ${strength.gradient} rounded-2xl md:rounded-3xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-500 relative overflow-hidden mx-auto sm:mx-0 flex-shrink-0`}
                     >
                       <div className='absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500'></div>
-                      <strength.icon className='h-10 w-10 text-white relative z-10 group-hover:scale-110 transition-transform duration-300' />
+                      <strength.icon className='h-8 w-8 md:h-10 md:w-10 text-white relative z-10 group-hover:scale-110 transition-transform duration-300' />
                     </div>
-                    <div className='flex-1'>
-                      <h3 className='text-2xl font-bold text-gray-800 mb-4 group-hover:text-blue-600 transition-colors duration-300'>
+                    <div className='flex-1 text-center sm:text-right'>
+                      <h3 className='text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2 md:mb-4 group-hover:text-blue-600 transition-colors duration-300'>
                         {strength.title}
                       </h3>
-                      <p className='text-gray-600 leading-relaxed text-lg'>
+                      <p className='text-sm sm:text-base md:text-lg text-gray-600 leading-relaxed'>
                         {strength.description}
                       </p>
                     </div>
@@ -1266,23 +1359,24 @@ const Index = () => {
         </div>
       </section>
 
-      {/* הבעיה - למה צריך את זה */}
-      <section className='py-20 px-4 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50'>
+      {/* הבעיה - למה צריך את זה - Mobile Responsive */}
+      <section className='py-12 md:py-20 px-3 sm:px-4 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50'>
         <div className='container max-w-7xl mx-auto'>
-          <div className='text-center mb-16'>
-            <div className='inline-flex items-center space-x-3 bg-gradient-to-r from-red-100 to-orange-100 text-red-800 px-6 py-3 rounded-full text-sm font-bold border border-red-200 shadow-lg mb-6'>
-              <AlertTriangle className='h-5 w-5' />
+          <div className='text-center mb-10 md:mb-16'>
+            <div className='inline-flex items-center space-x-2 md:space-x-3 bg-gradient-to-r from-red-100 to-orange-100 text-red-800 px-4 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold border border-red-200 shadow-lg mb-4 md:mb-6'>
+              <AlertTriangle className='h-4 w-4 md:h-5 md:w-5' />
               <span>{t('problems')}</span>
             </div>
-            <h2 className='text-4xl md:text-5xl font-bold text-gray-800 mb-6'>
+            <h2 className='text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-4 md:mb-6 px-4'>
               {t('problemsTitle')}
             </h2>
-            <p className='text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed'>
+            <p className='text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4'>
               {t('problemsSubtitle')}
             </p>
           </div>
 
-          <div className='grid md:grid-cols-2 gap-8'>
+          {/* Problems Grid - Mobile Responsive */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8'>
             {problems.map((problem, index) => (
               <Card
                 key={index}
@@ -1294,18 +1388,18 @@ const Index = () => {
                 onMouseEnter={() => setHoveredProblem(index)}
                 onMouseLeave={() => setHoveredProblem(null)}
               >
-                <CardContent className='p-8'>
-                  <div className='flex items-start space-x-8'>
+                <CardContent className='p-4 sm:p-6 md:p-8'>
+                  <div className='flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4 md:space-x-8'>
                     <div
-                      className={`w-16 h-16 bg-gradient-to-r ${problem.gradient} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                      className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r ${problem.gradient} rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto sm:mx-0 flex-shrink-0`}
                     >
-                      <problem.icon className='h-8 w-8 text-white' />
+                      <problem.icon className='h-7 w-7 sm:h-8 sm:w-8 text-white' />
                     </div>
-                    <div className='flex-1'>
-                      <h3 className='text-xl font-bold text-gray-800 mb-3 mr-2'>
+                    <div className='flex-1 text-center sm:text-right'>
+                      <h3 className='text-lg sm:text-xl font-bold text-gray-800 mb-2 md:mb-3'>
                         {problem.title}
                       </h3>
-                      <p className='text-gray-600 leading-relaxed'>
+                      <p className='text-sm sm:text-base text-gray-600 leading-relaxed'>
                         {problem.description}
                       </p>
                     </div>
@@ -1318,88 +1412,89 @@ const Index = () => {
         </div>
       </section>
 
-      {/* איך זה עובד - 3 צעדים פשוטים */}
-      <section className='py-20 px-4 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50'>
+      {/* איך זה עובד - 3 צעדים פשוטים - Mobile Responsive */}
+      <section className='py-12 md:py-20 px-3 sm:px-4 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50'>
         <div className='container max-w-7xl mx-auto'>
-          <div className='text-center mb-16'>
-            <div className='inline-flex items-center space-x-3 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 px-6 py-3 rounded-full text-sm font-bold border border-blue-200 shadow-lg mb-6'>
-              <Lightbulb className='h-5 w-5' />
+          <div className='text-center mb-10 md:mb-16'>
+            <div className='inline-flex items-center space-x-2 md:space-x-3 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 px-4 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold border border-blue-200 shadow-lg mb-4 md:mb-6'>
+              <Lightbulb className='h-4 w-4 md:h-5 md:w-5' />
               <span>{t('howItWorks')}</span>
             </div>
-            <h2 className='text-4xl md:text-5xl font-bold text-gray-800 mb-6'>
+            <h2 className='text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-4 md:mb-6 px-4'>
               {t('howItWorksTitle')}
             </h2>
-            <p className='text-xl text-gray-600 max-w-3xl mx-auto'>
+            <p className='text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4'>
               {t('howItWorksSubtitle')}
             </p>
           </div>
 
-          <div className='grid lg:grid-cols-3 gap-12 relative'>
-            {/* Connection Lines */}
+          {/* Steps Grid - Mobile Responsive */}
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-12 relative'>
+            {/* Connection Lines - Desktop Only */}
             <div className='hidden lg:block absolute top-1/2 left-1/3 w-1/3 h-0.5 bg-gradient-to-r from-blue-300 to-purple-300 transform -translate-y-1/2'></div>
             <div className='hidden lg:block absolute top-1/2 right-1/3 w-1/3 h-0.5 bg-gradient-to-r from-purple-300 to-pink-300 transform -translate-y-1/2'></div>
 
-            {/* Steps section */}
+            {/* Steps section - Mobile Optimized */}
             {[
               {
                 number: '01',
-                title: 'מעלים תוכן',
-                description: 'וידאו, תמונה או שמע - פשוט כמו לשלוח הודעה',
+                title: t('step1Title'),
+                description: t('step1Subtitle'),
                 icon: CloudUpload,
-                details: ['וידאו HD', 'תמונות איכותיות', 'קבצי שמע נתמכים'],
+                details: [t('step1Feature1'), t('step1Feature2'), t('step1Feature3')],
                 gradient: 'from-blue-500 to-purple-500',
               },
               {
                 number: '02',
-                title: 'AI מנתח הכל',
-                description: 'מזהה את המסר, בודק סגנון, קהל מתאים ותקציב מומלץ',
+                title: t('step2Title'),
+                description: t('step2Subtitle'),
                 icon: Brain,
-                details: ['ניתוח ויזואלי', 'זיהוי קהל יעד', 'אסטרטגיה חכמה'],
+                details: [t('step2Feature1'), t('step2Feature2'), t('step2Feature3')],
                 gradient: 'from-purple-500 to-pink-500',
               },
               {
                 number: '03',
-                title: 'מקבלים תוכנית פעולה מלאה',
-                description: 'כולל שיגור מיידי לקמפיין כשמחוברים לפלטפורמות',
+                title: t('step3Title'),
+                description: t('step3Subtitle'),
                 icon: Rocket,
-                details: ['תוכנית מלאה', 'שיגור ישיר', 'מעקב תוצאות'],
+                details: [t('step3Feature1'), t('step3Feature2'), t('step3Feature3')],
                 gradient: 'from-pink-500 to-red-500',
               },
             ].map((step, index) => (
               <div key={index} className='text-center relative group'>
-                <div className='relative mb-8'>
+                <div className='relative mb-6 md:mb-8'>
                   <div
-                    className={`w-24 h-24 bg-gradient-to-r ${step.gradient} rounded-3xl flex items-center justify-center mx-auto text-white text-3xl font-bold shadow-2xl transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 relative z-10`}
+                    className={`w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r ${step.gradient} rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto text-white text-2xl sm:text-3xl font-bold shadow-2xl transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 relative z-10`}
                   >
                     {step.number}
                   </div>
                   <div
-                    className={`absolute inset-0 bg-gradient-to-r ${step.gradient} rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300`}
+                    className={`absolute inset-0 bg-gradient-to-r ${step.gradient} rounded-2xl sm:rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300`}
                   ></div>
 
-                  {/* Floating Icon */}
-                  <div className='absolute -top-2 -right-2 w-12 h-12 bg-white rounded-2xl shadow-lg flex items-center justify-center transform transition-all duration-500 group-hover:scale-110'>
-                    <step.icon className='h-6 w-6 text-purple-600' />
+                  {/* Floating Icon - Hidden on very small screens */}
+                  <div className='hidden sm:flex absolute -top-2 -right-2 w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl md:rounded-2xl shadow-lg items-center justify-center transform transition-all duration-500 group-hover:scale-110'>
+                    <step.icon className='h-5 w-5 md:h-6 md:w-6 text-purple-600' />
                   </div>
                 </div>
 
-                <h3 className='text-2xl font-bold text-gray-800 mb-4 group-hover:text-purple-600 transition-colors duration-300'>
+                <h3 className='text-xl sm:text-2xl font-bold text-gray-800 mb-3 md:mb-4 group-hover:text-purple-600 transition-colors duration-300 px-2'>
                   {step.title}
                 </h3>
-                <p className='text-gray-600 leading-relaxed text-lg mb-6'>
+                <p className='text-sm sm:text-base md:text-lg text-gray-600 leading-relaxed mb-4 md:mb-6 px-4'>
                   {step.description}
                 </p>
 
-                {/* Step Details Card */}
+                {/* Step Details Card - Mobile Optimized */}
                 <Card className='max-w-sm mx-auto bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2'>
-                  <CardContent className='p-4'>
+                  <CardContent className='p-3 sm:p-4'>
                     <div className='space-y-2'>
                       {step.details.map((detail, idx) => (
                         <div
                           key={idx}
-                          className='flex items-center justify-center space-x-2 text-sm text-gray-600'
+                          className='flex items-center justify-center space-x-2 text-xs sm:text-sm text-gray-600'
                         >
-                          <CheckCircle className='h-4 w-4 text-green-500' />
+                          <CheckCircle className='h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 flex-shrink-0' />
                           <span>{detail}</span>
                         </div>
                       ))}
@@ -1412,64 +1507,63 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Pricing Section - עמוד מחירים */}
+      {/* Pricing Section - עמוד מחירים - Mobile Responsive */}
       <section
         id='pricing'
-        className='py-20 px-4 bg-gradient-to-r from-white via-blue-50 to-purple-50'
+        className='py-12 md:py-20 px-3 sm:px-4 bg-gradient-to-r from-white via-blue-50 to-purple-50'
       >
         <div className='container max-w-6xl mx-auto text-center'>
-          <div className='mb-16'>
-            <h2 className='text-4xl md:text-5xl font-bold text-gray-800 mb-6'>
-              בחר את החבילה המתאימה לך
+          <div className='mb-10 md:mb-16'>
+            <h2 className='text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-4 md:mb-6 px-4'>
+              {t('pricingTitle')}
             </h2>
-            <p className='text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed'>
-              התחל בחינם ועדכן כשאתה מוכן. כל החבילות כוללות את כל התכונות
-              הבסיסיות
+            <p className='text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4'>
+              {t('pricingSubtitle')}
             </p>
           </div>
 
-          {/* Pricing Cards */}
-          <div className='grid md:grid-cols-2 gap-8 max-w-4xl mx-auto'>
-            {/* Monthly Plan */}
-            <div className='bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 hover:shadow-3xl transition-all duration-500 transform hover:scale-105 relative overflow-hidden'>
-              <div className='absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600'></div>
+          {/* Pricing Cards - Mobile Responsive - 3 Plans */}
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-6 max-w-7xl mx-auto items-stretch'>
+            {/* Free Plan - Mobile Responsive */}
+            <div className='bg-white rounded-2xl md:rounded-3xl shadow-2xl border border-gray-100 p-6 md:p-8 hover:shadow-3xl transition-all duration-500 transform hover:scale-105 relative overflow-hidden flex flex-col h-full'>
+              <div className='absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-500 to-teal-500'></div>
 
               <div className='mb-6'>
-                <h3 className='text-2xl font-bold text-gray-900 mb-2'>
-                  חבילה חודשית
+                <h3 className='text-xl md:text-2xl font-bold text-gray-900 mb-2'>
+                  {t('freePlan')}
                 </h3>
-                <p className='text-gray-600'>גמישות מקסימלית עם ביטול בכל עת</p>
+                <p className='text-sm md:text-base text-gray-600'>{t('freePlanDescription')}</p>
               </div>
 
-              <div className='mb-8'>
-                <div className='text-4xl font-bold text-gray-900 mb-2'>₪60</div>
-                <div className='text-gray-500'>לחודש</div>
+              <div className='mb-6 md:mb-8'>
+                <div className='text-3xl md:text-4xl font-bold text-gray-900 mb-2'>{t('freePrice')}</div>
+                <div className='text-sm md:text-base text-gray-500'>{t('limited3Analyses')}</div>
               </div>
 
-              <ul className='text-right space-y-4 mb-8'>
+              <ul className='text-right space-y-3 md:space-y-4 mb-6 md:mb-8 flex-grow'>
                 <li className='flex items-center justify-end'>
                   <span className='text-gray-700 ml-3'>
-                    כל התכונות הבסיסיות
+                    {t('freeFeature1')}
                   </span>
-                  <div className='w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'>
+                  <div className='w-5 h-5 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center'>
                     <span className='text-white text-xs'>✓</span>
                   </div>
                 </li>
                 <li className='flex items-center justify-end'>
-                  <span className='text-gray-700 ml-3'>קמפיינים ללא הגבלה</span>
-                  <div className='w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'>
+                  <span className='text-gray-700 ml-3'>{t('freeFeature2')}</span>
+                  <div className='w-5 h-5 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center'>
                     <span className='text-white text-xs'>✓</span>
                   </div>
                 </li>
                 <li className='flex items-center justify-end'>
-                  <span className='text-gray-700 ml-3'>ניתוח מתקדם</span>
-                  <div className='w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'>
+                  <span className='text-gray-700 ml-3'>{t('freeFeature3')}</span>
+                  <div className='w-5 h-5 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center'>
                     <span className='text-white text-xs'>✓</span>
                   </div>
                 </li>
                 <li className='flex items-center justify-end'>
-                  <span className='text-gray-700 ml-3'>תמיכה טכנית</span>
-                  <div className='w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'>
+                  <span className='text-gray-700 ml-3'>{t('freeFeature4')}</span>
+                  <div className='w-5 h-5 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center'>
                     <span className='text-white text-xs'>✓</span>
                   </div>
                 </li>
@@ -1477,38 +1571,94 @@ const Index = () => {
 
               <Button
                 size='lg'
-                className='w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white py-4 text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105'
+                className='w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white py-3 md:py-4 text-base md:text-lg rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 mt-auto'
                 onClick={navigateToAuth}
               >
-                התחל עכשיו
+                {t('startNow')}
               </Button>
             </div>
 
-            {/* Yearly Plan */}
-            <div className='bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 hover:shadow-3xl transition-all duration-500 transform hover:scale-105 relative overflow-hidden'>
+            {/* Regular Plan - Mobile Responsive */}
+            <div className='bg-white rounded-2xl md:rounded-3xl shadow-2xl border-2 border-blue-500 p-6 md:p-8 hover:shadow-3xl transition-all duration-500 transform hover:scale-105 relative overflow-hidden flex flex-col h-full'>
+              <div className='absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600'></div>
+              
+              {/* Most Popular Badge */}
+              <div className='absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg'>
+                {t('mostPopular')}
+              </div>
+
+              <div className='mb-6 mt-4'>
+                <h3 className='text-xl md:text-2xl font-bold text-gray-900 mb-2'>
+                  {t('regularPlan')}
+                </h3>
+                <p className='text-sm md:text-base text-gray-600'>{t('regularPlanDescription')}</p>
+              </div>
+
+              <div className='mb-6 md:mb-8'>
+                <div className='text-3xl md:text-4xl font-bold text-gray-900 mb-2'>{t('regularPrice')}</div>
+                <div className='text-sm md:text-base text-gray-500'>{t('limited30Analyses')}</div>
+              </div>
+
+              <ul className='text-right space-y-3 md:space-y-4 mb-6 md:mb-8 flex-grow'>
+                <li className='flex items-center justify-end'>
+                  <span className='text-gray-700 ml-3'>
+                    {t('regularFeature1')}
+                  </span>
+                  <div className='w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'>
+                    <span className='text-white text-xs'>✓</span>
+                  </div>
+                </li>
+                <li className='flex items-center justify-end'>
+                  <span className='text-gray-700 ml-3'>{t('regularFeature2')}</span>
+                  <div className='w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'>
+                    <span className='text-white text-xs'>✓</span>
+                  </div>
+                </li>
+                <li className='flex items-center justify-end'>
+                  <span className='text-gray-700 ml-3'>{t('regularFeature3')}</span>
+                  <div className='w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'>
+                    <span className='text-white text-xs'>✓</span>
+                  </div>
+                </li>
+                <li className='flex items-center justify-end'>
+                  <span className='text-gray-700 ml-3'>{t('regularFeature4')}</span>
+                  <div className='w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'>
+                    <span className='text-white text-xs'>✓</span>
+                  </div>
+                </li>
+              </ul>
+
+              <Button
+                size='lg'
+                className='w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white py-3 md:py-4 text-base md:text-lg rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 mt-auto'
+                onClick={navigateToAuth}
+              >
+                {t('choosePlan')}
+              </Button>
+            </div>
+
+            {/* Unlimited Plan - Mobile Responsive */}
+            <div className='bg-white rounded-2xl md:rounded-3xl shadow-2xl border border-gray-100 p-6 md:p-8 hover:shadow-3xl transition-all duration-500 transform hover:scale-105 relative overflow-hidden flex flex-col h-full'>
               <div className='absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600'></div>
 
               <div className='mb-6'>
-                <h3 className='text-2xl font-bold text-gray-900 mb-2'>
-                  חבילה שנתית
+                <h3 className='text-xl md:text-2xl font-bold text-gray-900 mb-2'>
+                  {t('unlimitedPlan')}
                 </h3>
-                <p className='text-gray-600'>חסכון של ₪120 בשנה</p>
+                <p className='text-sm md:text-base text-gray-600'>{t('unlimitedPlanDescription')}</p>
               </div>
 
-              <div className='mb-8'>
-                <div className='text-4xl font-bold text-gray-900 mb-2'>
-                  ₪600
+              <div className='mb-6 md:mb-8'>
+                <div className='text-3xl md:text-4xl font-bold text-gray-900 mb-2'>
+                  {t('unlimitedPrice')}
                 </div>
-                <div className='text-gray-500'>לשנה</div>
-                <div className='text-sm text-green-600 font-medium mt-1'>
-                  חסכון של 17%
-                </div>
+                <div className='text-sm md:text-base text-gray-500'>{t('unlimitedAnalyses')}</div>
               </div>
 
-              <ul className='text-right space-y-4 mb-8'>
+              <ul className='text-right space-y-3 md:space-y-4 mb-6 md:mb-8 flex-grow'>
                 <li className='flex items-center justify-end'>
                   <span className='text-gray-700 ml-3'>
-                    כל התכונות מהחבילה החודשית
+                    {t('unlimitedFeature1')}
                   </span>
                   <div className='w-5 h-5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center'>
                     <span className='text-white text-xs'>✓</span>
@@ -1516,20 +1666,20 @@ const Index = () => {
                 </li>
                 <li className='flex items-center justify-end'>
                   <span className='text-gray-700 ml-3'>
-                    תכונות מתקדמות בלעדיות
+                    {t('unlimitedFeature2')}
                   </span>
                   <div className='w-5 h-5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center'>
                     <span className='text-white text-xs'>✓</span>
                   </div>
                 </li>
                 <li className='flex items-center justify-end'>
-                  <span className='text-gray-700 ml-3'>תמיכה מועדפת</span>
+                  <span className='text-gray-700 ml-3'>{t('unlimitedFeature3')}</span>
                   <div className='w-5 h-5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center'>
                     <span className='text-white text-xs'>✓</span>
                   </div>
                 </li>
                 <li className='flex items-center justify-end'>
-                  <span className='text-gray-700 ml-3'>עדכונים מוקדמים</span>
+                  <span className='text-gray-700 ml-3'>{t('unlimitedFeature4')}</span>
                   <div className='w-5 h-5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center'>
                     <span className='text-white text-xs'>✓</span>
                   </div>
@@ -1538,76 +1688,74 @@ const Index = () => {
 
               <Button
                 size='lg'
-                className='w-full bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 hover:from-pink-700 hover:via-purple-700 hover:to-blue-700 text-white py-4 text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105'
+                className='w-full bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 hover:from-pink-700 hover:via-purple-700 hover:to-blue-700 text-white py-3 md:py-4 text-base md:text-lg rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 mt-auto'
                 onClick={navigateToAuth}
               >
-                בחר חבילה שנתית
+                {t('choosePlan')}
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Clean Footer */}
-      <footer className='bg-gray-50 py-12 px-6'>
+      {/* Clean Footer - Mobile Responsive */}
+      <footer className='bg-gray-50 py-8 md:py-12 px-4 md:px-6'>
         <div className='container max-w-6xl mx-auto text-center'>
-          {/* Logo and Description */}
-          <div className='mb-8'>
-            <div className='flex items-center justify-center space-x-3 mb-4'>
-              <div className='w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center'>
-                <span className='text-white font-bold text-lg'>L</span>
+          {/* Logo and Description - Mobile Optimized */}
+          <div className='mb-6 md:mb-8'>
+            <div className='flex items-center justify-center space-x-2 md:space-x-3 mb-3 md:mb-4'>
+              <div className='w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-lg md:rounded-xl flex items-center justify-center'>
+                <span className='text-white font-bold text-base md:text-lg'>L</span>
               </div>
-              <span className='text-2xl font-bold text-gray-900'>
+              <span className='text-xl md:text-2xl font-bold text-gray-900'>
                 Look At Me
               </span>
             </div>
-            <p className='text-gray-600 leading-relaxed text-sm max-w-lg mx-auto'>
-              פלטפורמת שיווק עם ניתוח תוכן מתקדם של בינה מלאכותית ושליחת
-              קמפיינים אוטומטית לכל הפלטפורמות
+            <p className='text-gray-600 leading-relaxed text-xs sm:text-sm max-w-lg mx-auto px-4'>
+              {t('footerDescription')}
             </p>
           </div>
 
-          {/* Navigation Links - One Line */}
-          <div className='flex flex-wrap items-center justify-center gap-8 text-sm mb-8'>
+          {/* Navigation Links - Mobile Responsive */}
+          <div className='flex flex-wrap items-center justify-center gap-4 md:gap-6 lg:gap-8 text-xs sm:text-sm mb-6 md:mb-8'>
             <Button
               variant='link'
               className='text-gray-600 hover:text-gray-900 p-0 h-auto'
               onClick={navigateToCampaign}
             >
-              יצירת קמפיין
+              {t('createCampaign')}
             </Button>
             <Button
               variant='link'
               className='text-gray-600 hover:text-gray-900 p-0 h-auto'
               onClick={() => setShowFAQ(true)}
             >
-              שאלות נפוצות
+              {t('faq')}
             </Button>
             <a
               href='#'
               className='text-gray-600 hover:text-gray-900 transition-colors'
             >
-              צור קשר
+              {t('contact')}
             </a>
-            <Button
-              variant='link'
-              className='text-gray-600 hover:text-gray-900 p-0 h-auto'
-              onClick={() => setShowPrivacy(true)}
+            <a 
+              href="/privacy-policy" 
+              className='text-gray-600 hover:text-gray-900 transition-colors'
             >
-              מדיניות פרטיות
-            </Button>
+              {t('privacyPolicy')}
+            </a>
             <Button
               variant='link'
               className='text-gray-600 hover:text-gray-900 p-0 h-auto'
               onClick={() => setShowTerms(true)}
             >
-              תנאי שירות
+              {t('termsOfService')}
             </Button>
           </div>
 
-          {/* Copyright */}
-          <div className='text-xs text-gray-500'>
-            © 2025 Look At Me Inc. כל הזכויות שמורות.
+          {/* Copyright - Mobile Responsive */}
+          <div className='text-xs sm:text-sm text-gray-500 px-4'>
+            {t('allRightsReserved')}
           </div>
         </div>
       </footer>
@@ -1618,12 +1766,14 @@ const Index = () => {
         onClose={() => setShowFAQ(false)}
         openFAQItem={openFAQItem}
         setOpenFAQItem={setOpenFAQItem}
+        t={t}
       />
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
-      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} t={t} />
       <PrivacyModal
         isOpen={showPrivacy}
         onClose={() => setShowPrivacy(false)}
+        t={t}
       />
     </div>
   );

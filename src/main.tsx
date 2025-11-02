@@ -1,9 +1,14 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { AuthProvider } from './lib/auth-context'
 
 // Initialize security (commented out for now to fix display issue)
 // import { initializeSecurity } from './lib/frontend-security'
 // initializeSecurity();
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <AuthProvider>
+    <App />
+  </AuthProvider>
+);

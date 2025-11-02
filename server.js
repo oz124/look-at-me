@@ -68,9 +68,16 @@ app.use(helmet({
   }
 }));
 
-// CORS Configuration
+// CORS Configuration - Secure for Production
 console.log("🔍 ALLOWED_ORIGINS from env:", process.env.ALLOWED_ORIGINS);
-const allowedOrigins = [
+
+// Production origins from environment variable
+const productionOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [];
+
+// Development origins (only in development mode)
+const developmentOrigins = [
   'http://localhost:8080', 
   'http://localhost:3000', 
   'http://127.0.0.1:8080', 
@@ -80,6 +87,13 @@ const allowedOrigins = [
   'http://192.168.0.110:8081',
   'http://localhost:8081'
 ];
+
+// Use production origins in production, development origins in development
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? productionOrigins 
+  : [...developmentOrigins, ...productionOrigins];
+
+console.log("🔍 Environment:", process.env.NODE_ENV);
 console.log("🔍 Final allowedOrigins:", allowedOrigins);
 
 app.use(cors({
@@ -90,20 +104,23 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
-    // Allow localhost and 127.0.0.1 for development
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      console.log("✅ Allowing localhost origin:", origin);
-      return callback(null, true);
+    // In development: Allow localhost and 127.0.0.1 automatically
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        console.log("✅ Allowing localhost origin (dev mode):", origin);
+        return callback(null, true);
+      }
+      
+      // Allow local network IPs in development (192.168.x.x)
+      if (origin.match(/http:\/\/192\.168\.\d+\.\d+:\d+/)) {
+        console.log("✅ Allowing local network origin (dev mode):", origin);
+        return callback(null, true);
+      }
     }
     
-    // Allow local network IPs in development (192.168.x.x)
-    if (process.env.NODE_ENV !== 'production' && origin.match(/http:\/\/192\.168\.\d+\.\d+:\d+/)) {
-      console.log("✅ Allowing local network origin (dev mode):", origin);
-      return callback(null, true);
-    }
-    
+    // Check against allowed origins list
     if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log("✅ Allowing allowed origin:", origin);
+      console.log("✅ Allowing whitelisted origin:", origin);
       callback(null, true);
     } else {
       console.log("❌ Rejecting origin:", origin);
@@ -262,6 +279,33 @@ app.post('/api/campaigns/create',
 );
 console.log("✅ campaigns/create.js loaded with security");
 
+// Campaign List endpoint - Get user's campaigns
+console.log("📁 Loading campaigns/list.js...");
+const listCampaignsRoute = require('./api/campaigns/list');
+app.get('/api/campaigns/list',
+  createRateLimit({ max: 100, windowMs: 15 * 60 * 1000 }), // 100 requests per 15 minutes
+  listCampaignsRoute
+);
+console.log("✅ campaigns/list.js loaded with security");
+
+// Campaign Pause/Resume endpoint
+console.log("📁 Loading campaigns/pause.js...");
+const pauseCampaignRoute = require('./api/campaigns/pause');
+app.post('/api/campaigns/pause',
+  createRateLimit({ max: 20, windowMs: 15 * 60 * 1000 }), // 20 requests per 15 minutes
+  pauseCampaignRoute
+);
+console.log("✅ campaigns/pause.js loaded with security");
+
+// Campaign Metrics Update endpoint
+console.log("📁 Loading campaigns/update-metrics.js...");
+const updateMetricsRoute = require('./api/campaigns/update-metrics');
+app.post('/api/campaigns/update-metrics',
+  createRateLimit({ max: 50, windowMs: 15 * 60 * 1000 }), // 50 requests per 15 minutes
+  updateMetricsRoute
+);
+console.log("✅ campaigns/update-metrics.js loaded with security");
+
 // Platform Verification endpoint
 console.log("📁 Loading platforms/verify.js...");
 const verifyPlatformRoute = require('./api/platforms/verify');
@@ -344,9 +388,6 @@ app.use((error, req, res, next) => {
 // Serve React app for all other routes (only in production)
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-  });
 }
 
 console.log("🎯 Starting server...");

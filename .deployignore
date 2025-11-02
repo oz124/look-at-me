@@ -1,0 +1,81 @@
+# קבצים שלא צריכים להיות בפריסה (לחסכון במקום ומהירות)
+
+# Development files
+node_modules/
+.git/
+.gitignore
+.env
+.env.local.example
+
+# Source files (רק dist נדרש)
+src/
+!src/lib/
+
+# Documentation
+*.md
+!README.md
+DEPLOYMENT_SECURITY_CHECKLIST.md
+FIREBASE_SETUP_INSTRUCTIONS.md
+OCEAN_DIGITAL_DEPLOY.md
+SECURITY_FIXES_SUMMARY.md
+
+# Build configs (לא נדרשים בשרת)
+vite.config.ts.bak
+tsconfig*.json
+tailwind.config.ts
+postcss.config.js
+eslint.config.js
+components.json
+
+# Development tools
+.vscode/
+.idea/
+*.code-workspace
+
+# Tests
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+test/
+tests/
+
+# Temporary files
+*.log
+logs/
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backups
+*.bak
+*.backup
+*.old
+*.swp
+*.swo
+
+# Windows specific
+$RECYCLE.BIN/
+
+# Deployment scripts (לא נדרשים בשרת)
+deploy-to-ocean.sh
+deploy-to-ocean.ps1
+pre-deployment-check.js
+
+# Archives
+*.tar.gz
+*.zip
+*.rar
+
+# Public assets (כבר ב-dist/)
+public/
+
+# HTML template (כבר ב-dist/)
+index.html
+
+# Security check scripts
+security-*.js
+

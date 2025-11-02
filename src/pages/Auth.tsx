@@ -4,46 +4,106 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Mail, Lock, User, Chrome } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Mail, Lock, User, Chrome, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { registerUser, loginUser, loginWithGoogle, loginWithFacebook } from "@/lib/firebase-auth";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    phone: ""
+  });
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate authentication
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      if (isLogin) {
+        // Login
+        await loginUser(formData.email, formData.password);
+        toast({
+          title: "🎉 התחברת בהצלחה!",
+          description: "ברוך השב! אתה מועבר לדף יצירת הקמפיין",
+        });
+      } else {
+        // Register
+        if (!formData.name.trim()) {
+          throw new Error("נא להזין שם מלא");
+        }
+        await registerUser(formData.email, formData.password, formData.name, formData.phone);
+        toast({
+          title: "🎉 החשבון נוצר בהצלחה!",
+          description: "נשלח אליך מייל אימות. ברוך הבא למערכת!",
+        });
+      }
+      
+      // Redirect to campaign page
+      setTimeout(() => {
+        navigate("/campaign");
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
-        title: isLogin ? "התחברת בהצלחה!" : "החשבון נוצר בהצלחה!",
-        description: "אתה מועבר לדף יצירת הקמפיין",
+        title: "❌ שגיאה",
+        description: error.message || "משהו השתבש. נסה שוב",
+        variant: "destructive"
       });
-      // In a real app, you would redirect to /campaign here
-      window.location.href = "/campaign";
-    }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSocialAuth = (provider: string) => {
+  const handleSocialAuth = async (provider: string) => {
     setIsLoading(true);
-    toast({
-      title: `התחברות דרך ${provider}`,
-      description: "מעבד את הבקשה...",
-    });
     
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      if (provider === "Google") {
+        await loginWithGoogle();
+        toast({
+          title: "🎉 התחברת בהצלחה!",
+          description: "ברוך השב! אתה מועבר לדף יצירת הקמפיין",
+        });
+        
+        setTimeout(() => {
+          navigate("/campaign");
+        }, 1000);
+      } else if (provider === "Facebook") {
+        await loginWithFacebook();
+        toast({
+          title: "🎉 התחברת בהצלחה!",
+          description: "ברוך השב! אתה מועבר לדף יצירת הקמפיין",
+        });
+        
+        setTimeout(() => {
+          navigate("/campaign");
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.error('Social auth error:', error);
       toast({
-        title: "התחברת בהצלחה!",
-        description: "אתה מועבר לדף יצירת הקמפיין",
+        title: "❌ שגיאה",
+        description: error.message || "משהו השתבש. נסה שוב",
+        variant: "destructive"
       });
-      window.location.href = "/campaign";
-    }, 2000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -108,19 +168,39 @@ const Auth = () => {
             {/* Email Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-right block">שם מלא</Label>
-                  <div className="relative">
-                    <User className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input 
-                      id="name" 
-                      placeholder="הכנס את שמך המלא" 
-                      required 
-                      className="pr-10 text-right"
-                      dir="rtl"
-                    />
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-right block">שם מלא</Label>
+                    <div className="relative">
+                      <User className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input 
+                        id="name" 
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="הכנס את שמך המלא" 
+                        required 
+                        className="pr-10 text-right"
+                        dir="rtl"
+                      />
+                    </div>
                   </div>
-                </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-right block">טלפון (אופציונלי)</Label>
+                    <div className="relative">
+                      <Phone className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input 
+                        id="phone" 
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        type="tel" 
+                        placeholder="050-1234567" 
+                        className="pr-10 text-right"
+                        dir="rtl"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
               
               <div className="space-y-2">
@@ -128,9 +208,11 @@ const Auth = () => {
                 <div className="relative">
                   <Mail className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
                   <Input 
-                    id="email" 
+                    id="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
                     type="email" 
-                    placeholder="הכנס את כתובת האימייל שלך" 
+                    placeholder="example@email.com" 
                     required 
                     className="pr-10"
                   />
@@ -142,10 +224,13 @@ const Auth = () => {
                 <div className="relative">
                   <Lock className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
                   <Input 
-                    id="password" 
+                    id="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
                     type="password" 
-                    placeholder="הכנס סיסמה" 
+                    placeholder="מינימום 6 תווים" 
                     required 
+                    minLength={6}
                     className="pr-10"
                   />
                 </div>

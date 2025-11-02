@@ -6,6 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Translations } from "@/lib/translations";
+import { useAuth } from "@/lib/auth-context";
+import { canUserAnalyze, incrementAnalysisCount, SUBSCRIPTION_PLANS } from "@/lib/firebase-auth";
+import { useNavigate } from "react-router-dom";
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase-config';
 import { 
   Upload, 
   DollarSign, 
@@ -1582,13 +1588,21 @@ ${JSON.stringify(audioAnalysis, null, 2)}
     return mapping[goal] || 'BRAND_AWARENESS';
   }
 
-  async deployAutomaticCampaign(platformName, campaignParams, adCreative, videoFile = null) {
+  async deployAutomaticCampaign(platformName, campaignParams, adCreative, videoFile = null, debugMode = false) {
     try {
       console.log(`🚀 מפרסם קמפיין אוטומטי ב-${platformName}...`);
       
       const accessToken = localStorage.getItem(`${platformName.toLowerCase()}_access_token`);
       
-      if (!accessToken) {
+      // 🔧 DEBUG MODE - דילוג על בדיקת access token
+      if (!debugMode && !accessToken) {
+        throw new Error(`לא מחובר ל-${platformName}`);
+      }
+      
+      // אם במצב DEBUG, נשתמש באקסס טוקן דמה
+      const tokenToUse = accessToken || (debugMode ? 'DEBUG_MODE_TOKEN' : null);
+      
+      if (!tokenToUse) {
         throw new Error(`לא מחובר ל-${platformName}`);
       }
 
@@ -1605,7 +1619,13 @@ ${JSON.stringify(audioAnalysis, null, 2)}
       formData.append('platform', platformName);
       formData.append('campaignParams', JSON.stringify(campaignParams));
       formData.append('adCreative', JSON.stringify(adCreative));
-      formData.append('accessToken', accessToken);
+      formData.append('accessToken', tokenToUse);
+      formData.append('debugMode', debugMode.toString()); // העברת מצב הבדיקה לשרת
+      
+      // הוספת userId למעקב אחר הקמפיין
+      if (currentUser?.uid) {
+        formData.append('userId', currentUser.uid);
+      }
       
       // הוספת קובץ הסרטון אם קיים
       if (videoFile) {
@@ -1842,6 +1862,39 @@ ${JSON.stringify(audioAnalysis, null, 2)}
   }
 }
 function EnhancedCampaign() {
+  // 🔧 DEBUG MODE - מאפשר פרסום בלי חיבור פלטפורמות (רק ב-development!)
+  // בפרודקשן (npm run build) - DEBUG_MODE יהיה אוטומטית false
+  const DEBUG_MODE = import.meta.env.DEV; // true רק ב-development, false ב-production
+  
+  // Firebase Auth
+  const { currentUser, userData, refreshUserData } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/auth');
+    }
+  }, [currentUser, navigate]);
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (currentUser?.displayName) return currentUser.displayName;
+    if (currentUser?.email) return currentUser.email.split('@')[0];
+    return 'משתמש';
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('connectedPlatforms');
+      navigate('/');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+  
   const [currentPage, setCurrentPage] = useState('campaign');
   const [currentStep, setCurrentStep] = useState(1);
   const [previewMode, setPreviewMode] = useState(false);
@@ -1866,12 +1919,44 @@ function EnhancedCampaign() {
   const [language, setLanguage] = useState('he');
   const [connectedPlatforms, setConnectedPlatforms] = useState({});
   const [deploymentProgress, setDeploymentProgress] = useState({});
+  
+  // Translation function and object based on local language state
+  const t = (key) => {
+    const lang = language === 'he' ? 'hebrew' : 'english';
+    return Translations[lang][key] || key;
+  };
+  
+  // Extended translation object for complex structures
+  t.steps = {
+    1: language === 'he' ? "העלאת סרטון ופרטי עסק" : "Video Upload & Business Details",
+    2: language === 'he' ? "מטרת הקמפיין" : "Campaign Goal",
+    3: language === 'he' ? "המלצות AI מתקדמות" : "Advanced AI Recommendations",
+    4: language === 'he' ? "שליחה אוטומטית ומעקב" : "Automatic Deployment & Tracking"
+  };
+  
+  t.nav = {
+    campaign: language === 'he' ? "יצירת קמפיין" : "Create Campaign",
+    platforms: language === 'he' ? "חיבור פלטפורמות" : "Connect Platforms",
+    home: language === 'he' ? "דף בית" : "Home"
+  };
+  
+  t.goals = {
+    leads: language === 'he' ? "יצירת לידים" : "Generate Leads",
+    sales: language === 'he' ? "הגדלת מכירות" : "Increase Sales",
+    awareness: language === 'he' ? "חשיפה למותג" : "Brand Awareness"
+  };
+  
+  t.title = language === 'he' ? "פלטפורמת שיווק AI מתקדמת" : "Advanced AI Marketing Platform";
+  t.platformsTitle = language === 'he' ? "ניהול חיבורי פלטפורמות" : "Platform Connections Management";
+  
+  const isRTL = language === 'he';
   const [uploadProgress, setUploadProgress] = useState({}); // Progress for video uploads
   const [campaignResults, setCampaignResults] = useState([]);
   const [isDeploying, setIsDeploying] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Manual editing states - track which cards are being edited
+  const [isManualEditMode, setIsManualEditMode] = useState(false);
   const [editingCards, setEditingCards] = useState({
     post: false,
     audience: false,
@@ -1951,69 +2036,6 @@ function EnhancedCampaign() {
     };
   }, []);
 
-  const translations = {
-    he: {
-      title: "פלטפורמת שיווק AI מתקדמת",
-      platformsTitle: "ניהול חיבורי פלטפורמות",
-      steps: {
-        1: "העלאת סרטון ופרטי עסק",
-        2: "מטרת הקמפיין", 
-        3: "המלצות AI מתקדמות",
-        4: "שליחה אוטומטית ומעקב"
-      },
-      nav: {
-        campaign: "יצירת קמפיין",
-        platforms: "חיבור פלטפורמות",
-        home: "דף בית"
-      },
-      upload: "העלאת סרטון לניתוח AI",
-      business: "תיאור העסק",
-      budget: "תקציב יומי (₪)",
-      goals: {
-        leads: "יצירת לידים",
-        sales: "הגדלת מכירות", 
-        awareness: "חשיפה למותג"
-      },
-      connect: "חבר פלטפורמות",
-      deploy: "שלח פרסומות",
-      next: "הבא",
-      prev: "הקודם",
-      analyzing: "מנתח...",
-      deploying: "משגר..."
-    },
-    en: {
-      title: "Advanced AI Marketing Platform",
-      platformsTitle: "Platform Connections Management", 
-      steps: {
-        1: "Video Upload & Business Details",
-        2: "Campaign Goal",
-        3: "Advanced AI Recommendations", 
-        4: "Automatic Deployment & Tracking"
-      },
-      nav: {
-        campaign: "Create Campaign",
-        platforms: "Connect Platforms",
-        home: "Home"
-      },
-      upload: "Upload Video for AI Analysis",
-      business: "Business Description",
-      budget: "Daily Budget ($)",
-      goals: {
-        leads: "Generate Leads",
-        sales: "Increase Sales",
-        awareness: "Brand Awareness"
-      },
-      connect: "Connect Platforms",
-      deploy: "Deploy Ads",
-      next: "Next",
-      prev: "Previous",
-      analyzing: "Analyzing...",
-      deploying: "Deploying..."
-    }
-  };
-
-  const t = translations[language];
-  const isRTL = language === 'he';
 
   // פונקציה לחזרה לדף הבית
   const handleGoHome = () => {
@@ -2034,23 +2056,22 @@ function EnhancedCampaign() {
       const safeMessage = String(message).substring(0, 200);
       setToastMessage(safeMessage);
       setShowToast(true);
-      
-      if (window.toastTimeout) {
-        clearTimeout(window.toastTimeout);
-      }
-      
-      window.toastTimeout = setTimeout(() => {
-        try {
-          setShowToast(false);
-          setToastMessage("");
-        } catch (error) {
-          console.error('Error hiding toast:', error);
-        }
-      }, 4000);
     } catch (error) {
       console.error('Error showing toast message:', error);
     }
   };
+
+  // Auto-hide toast after 2 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+          setShowToast(false);
+          setToastMessage("");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
 
   const steps = [
     { number: 1, title: t.steps[1], icon: Upload },
@@ -2310,7 +2331,7 @@ function EnhancedCampaign() {
 
   const handleAdvancedAnalysis = async (videoFile) => {
     if (!videoFile) {
-      showToastMessage("אין קובץ וידאו לניתוח");
+      showToastMessage(t('noVideoFile'));
       return false;
     }
 
@@ -2361,7 +2382,7 @@ function EnhancedCampaign() {
       };
       
       // שלב 1: התחלת הניתוח
-      await updateProgressRealTime(5, "המערכת שלנו מתחילה ניתוח מתקדם עבורך...", estimatedTotalTime);
+      await updateProgressRealTime(5, t('analysisStarting'), estimatedTotalTime);
       
       try {
         // קריאה ל-backend API במקום ל-OpenAI ישירות
@@ -2372,7 +2393,7 @@ function EnhancedCampaign() {
         requestFormData.append('campaignGoal', formData.campaignGoal || "awareness");
         
         // שלב 2: שליחת בקשה לשרת
-        await updateProgressRealTime(15, "המערכת שולחת את הסרטון לניתוח מתקדם...", Math.round(estimatedTotalTime * 0.8));
+        await updateProgressRealTime(15, t('sendingToAnalysis'), Math.round(estimatedTotalTime * 0.8));
         
         // התחלת הניתוח בשרת עם עדכון מתמשך
         const analysisPromise = fetch('/api/ai/advanced-analyze', {
@@ -2392,15 +2413,15 @@ function EnhancedCampaign() {
             
             // עדכון הודעות בהתאם להתקדמות
             if (newProgress < 25) {
-              setCurrentAnalysisStep("המערכת מנתחת את הסרטון שלך...");
+              setCurrentAnalysisStep(t('analyzingVideo'));
             } else if (newProgress < 45) {
-              setCurrentAnalysisStep("המערכת מנתחת צבעים ותאורה עבורך...");
+              setCurrentAnalysisStep(t('analyzingColors'));
             } else if (newProgress < 65) {
-              setCurrentAnalysisStep("המערכת מתמללת ומנתחת את השמע שלך...");
+              setCurrentAnalysisStep(t('analyzingAudio'));
             } else if (newProgress < 85) {
-              setCurrentAnalysisStep("המערכת בונה אסטרטגיה מותאמת עבורך...");
+              setCurrentAnalysisStep(t('buildingStrategy'));
             } else {
-              setCurrentAnalysisStep("המערכת מכינה המלצות מותאמות אישית עבורך...");
+              setCurrentAnalysisStep(t('preparingRecommendations'));
             }
           }
         }, 800); // עדכון כל 0.8 שניות לאט יותר
@@ -2421,7 +2442,7 @@ function EnhancedCampaign() {
         }
 
         // שלב 4: הניתוח הושלם
-        await updateProgressRealTime(100, "הניתוח הושלם בהצלחה! המערכת עבדה קשה עבורך!", 0);
+        await updateProgressRealTime(100, t('analysisComplete'), 0);
         
         // המרת התוצאה לפורמט המקורי
         const analysisResult = {
@@ -2461,13 +2482,13 @@ function EnhancedCampaign() {
         
         console.log(`✅ ניתוח הושלם בהצלחה תוך ${totalTime} שניות (משוער: ${estimatedTime} שניות, דיוק: ${accuracy}%)`);
         
-        showToastMessage(`✅ ניתוח הושלם בהצלחה תוך ${totalTime} שניות!`);
+        showToastMessage(t('analysisCompleteTime').replace('{time}', totalTime));
         
         return true;
         
       } catch (error) {
         console.error("שגיאה בניתוח מתקדם:", error);
-        showToastMessage("❌ שגיאה בניתוח הסרטון. אנא נסה שוב.");
+        showToastMessage(t('analysisError'));
         return false;
       }
 
@@ -2552,7 +2573,7 @@ function EnhancedCampaign() {
     setManualTargetAudience(targetAudience);
     setManualPublishingHours(publishingHours);
     setIsManualEditMode(true);
-    showToastMessage("✏️ מצב עריכה ידנית - התאם את הקמפיין לפי רצונך");
+    showToastMessage(t('editingModeEnabled'));
   };
 
   // Deploy with manual settings
@@ -2567,7 +2588,7 @@ function EnhancedCampaign() {
       );
 
       if (platformsToSend.length === 0) {
-        showToastMessage("נא לבחור לפחות פלטפורמה אחת לשליחה");
+        showToastMessage(t('selectAtLeastOnePlatform'));
         setIsDeploying(false);
         return;
       }
@@ -2646,16 +2667,16 @@ function EnhancedCampaign() {
       const totalCount = results.length;
       
       if (successCount === totalCount) {
-        showToastMessage(`🎉 כל הקמפיינים נשלחו בהצלחה! (${successCount}/${totalCount})`);
+        showToastMessage(t('allCampaignsSuccess').replace('{success}', successCount).replace('{total}', totalCount));
       } else if (successCount > 0) {
-        showToastMessage(`✅ ${successCount}/${totalCount} קמפיינים נשלחו בהצלחה`);
+        showToastMessage(t('someCampaignsSuccess').replace('{success}', successCount).replace('{total}', totalCount));
       } else {
-        showToastMessage("❌ כל הקמפיינים נכשלו. בדוק את החיבורים לפלטפורמות");
+        showToastMessage(t('allCampaignsFailed'));
       }
 
     } catch (error) {
       console.error("שגיאה כללית בשליחה:", error);
-      showToastMessage("שגיאה כללית בשליחה. אנא נסה שוב.");
+      showToastMessage(t('generalDeploymentError'));
     } finally {
       setIsDeploying(false);
       setIsManualEditMode(false);
@@ -2665,7 +2686,7 @@ function EnhancedCampaign() {
   const handleAutomaticDeployment = async () => {
     try {
       if (!brainResponse?.master_strategy) {
-        showToastMessage("אין אסטרטגיה זמינה לשליחה");
+        showToastMessage(t('noStrategyAvailable'));
         return;
       }
 
@@ -2680,7 +2701,7 @@ function EnhancedCampaign() {
           : brainResponse.master_strategy;
       } catch (parseError) {
         console.error("שגיאה בפרסור האסטרטגיה:", parseError);
-        showToastMessage("שגיאה בקריאת האסטרטגיה");
+        showToastMessage(t('errorReadingStrategy'));
         return;
       }
       
@@ -2693,17 +2714,21 @@ function EnhancedCampaign() {
         platform => connectedPlatforms[platform]?.status === 'connected'
       );
 
-      if (connectedPlatformNames.length === 0) {
-        showToastMessage("אין פלטפורמות מחוברות לשליחה");
+      // 🔧 DEBUG MODE - דילוג על בדיקת פלטפורמות מחוברות
+      if (!DEBUG_MODE && connectedPlatformNames.length === 0) {
+        showToastMessage(t('noPlatformsConnected'));
         return;
       }
 
-      const platformsToDeployment = platforms.filter(platform => {
-        const platformName = platform?.שם || platform?.name;
-        return platformName && connectedPlatformNames.includes(platformName);
-      });
+      // אם במצב DEBUG ואין פלטפורמות, משתמשים בפלטפורמות המומלצות מה-AI
+      const platformsToDeployment = DEBUG_MODE && connectedPlatformNames.length === 0
+        ? platforms // משתמש בכל הפלטפורמות המומלצות
+        : platforms.filter(platform => {
+            const platformName = platform?.שם || platform?.name;
+            return platformName && connectedPlatformNames.includes(platformName);
+          });
 
-      if (platformsToDeployment.length === 0) {
+      if (!DEBUG_MODE && platformsToDeployment.length === 0) {
         showToastMessage("אין פלטפורמות מומלצות שמחוברות כרגע");
         return;
       }
@@ -2743,7 +2768,8 @@ function EnhancedCampaign() {
               platformName,
               campaignParams,
               adCreative,
-              formData.video // העברת קובץ הסרטון המקורי
+              formData.video, // העברת קובץ הסרטון המקורי
+              DEBUG_MODE // העברת מצב הבדיקה
             );
           } catch (deployError) {
             console.error(`שגיאה בשליחה ל-${platformName}:`, deployError);
@@ -2949,26 +2975,25 @@ function EnhancedCampaign() {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Enhanced Header */}
+      {/* Enhanced Header - Mobile Optimized */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 py-4 transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-50 py-2 md:py-4 transition-all duration-300"
         id="header"
       >
-        <div className="container max-w-6xl mx-auto px-6">
-          <div className={`bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100 px-6 py-4 transition-all duration-300 ${
+        <div className="container max-w-6xl mx-auto px-3 md:px-6">
+          <div className={`bg-white/95 backdrop-blur-md rounded-xl md:rounded-2xl shadow-lg border border-gray-100 px-3 md:px-6 py-3 md:py-4 transition-all duration-300 ${
             isScrolled ? 'shadow-xl bg-white/98' : 'shadow-lg'
           }`}>
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">L</span>
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">L</span>
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden md:block">
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                   LOOK AT ME
                 </span>
-                <div className="text-xs text-gray-500 mt-0.5">AI Marketing Platform</div>
               </div>
             </div>
             
@@ -3019,18 +3044,28 @@ function EnhancedCampaign() {
                 <TrendingUp className="h-4 w-4" />
                 <span>ביצועים בזמן אמת</span>
               </Button>
+              <Separator orientation="vertical" className="h-8 mx-2" />
+              <span className="text-sm text-gray-700 font-medium px-2">
+                שלום, {getUserDisplayName()}
+              </span>
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                className="flex items-center space-x-2 rounded-xl transition-all duration-300 hover:bg-red-50 hover:text-red-600"
+              >
+                <span>התנתק</span>
+              </Button>
             </nav>
             
             {/* Mobile menu + Language switcher */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2 md:gap-3">
               {/* Language Switcher */}
-              <div className="flex items-center space-x-2 bg-white/70 backdrop-blur-sm rounded-xl p-2 shadow-sm">
-                <Globe className="h-4 w-4 text-blue-600" />
+              <div className="flex items-center gap-1 bg-white/70 backdrop-blur-sm rounded-lg px-2 py-1 shadow-sm">
                 <button
                   onClick={() => setLanguage(language === 'he' ? 'en' : 'he')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-all duration-300 ${
                     language === 'he' 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md' 
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
                       : 'text-blue-600 hover:bg-blue-50'
                   }`}
                 >
@@ -3038,9 +3073,9 @@ function EnhancedCampaign() {
                 </button>
                 <button
                   onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-all duration-300 ${
                     language === 'en' 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md' 
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
                       : 'text-blue-600 hover:bg-blue-50'
                   }`}
                 >
@@ -3052,7 +3087,7 @@ function EnhancedCampaign() {
               <Button
                 variant="ghost"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-xl hover:bg-gray-100"
+                className="md:hidden p-2 rounded-lg hover:bg-gray-100"
               >
                 <Menu className="h-5 w-5" />
               </Button>
@@ -3061,16 +3096,16 @@ function EnhancedCampaign() {
           
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="md:hidden mt-4 pb-4 border-t border-gray-200/50 pt-4 space-y-2">
+            <div className="md:hidden mt-3 pb-3 border-t border-gray-200/50 pt-3 space-y-2">
               <Button
                 onClick={() => {
                   handleGoHome();
                   setMobileMenuOpen(false);
                 }}
                 variant="ghost"
-                className="w-full justify-start rounded-xl transition-all duration-300 hover:bg-gray-100"
+                className="w-full justify-start rounded-lg py-3 text-base transition-all duration-300 hover:bg-gray-100"
               >
-                <Home className="h-4 w-4 mr-3" />
+                <Home className="h-4 w-4 mr-2" />
                 {t?.nav?.home || "דף בית"}
               </Button>
               <Button
@@ -3079,13 +3114,13 @@ function EnhancedCampaign() {
                   setCurrentPage('campaign');
                   setMobileMenuOpen(false);
                 }}
-                className={`w-full justify-start rounded-xl transition-all duration-300 ${
+                className={`w-full justify-start rounded-lg py-3 text-base transition-all duration-300 ${
                   currentPage === 'campaign' 
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
                     : 'hover:bg-gray-100'
                 }`}
               >
-                <Rocket className="h-4 w-4 mr-3" />
+                <Rocket className="h-4 w-4 mr-2" />
                 {t?.nav?.campaign || "יצירת קמפיין"}
               </Button>
               <Button
@@ -3094,16 +3129,16 @@ function EnhancedCampaign() {
                   setCurrentPage('platforms');
                   setMobileMenuOpen(false);
                 }}
-                className={`w-full justify-start rounded-xl transition-all duration-300 relative ${
+                className={`w-full justify-start rounded-lg py-3 text-base transition-all duration-300 relative ${
                   currentPage === 'platforms' 
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
                     : 'hover:bg-gray-100'
                 }`}
               >
-                <Link className="h-4 w-4 mr-3" />
+                <Link className="h-4 w-4 mr-2" />
                 {t?.nav?.platforms || "חיבור פלטפורמות"}
                 {Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length > 0 && (
-                  <span className="ml-auto bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                  <span className="ml-auto bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-md">
                     {Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length}
                   </span>
                 )}
@@ -3114,10 +3149,26 @@ function EnhancedCampaign() {
                   window.location.href = '/analytics';
                   setMobileMenuOpen(false);
                 }}
-                className="w-full justify-start rounded-xl hover:bg-gray-100 transition-all duration-300"
+                className="w-full justify-start rounded-lg py-3 text-base hover:bg-gray-100 transition-all duration-300"
               >
-                <TrendingUp className="h-4 w-4 mr-3" />
+                <TrendingUp className="h-4 w-4 mr-2" />
                 ביצועים בזמן אמת
+              </Button>
+              <Separator className="my-2" />
+              <div className="px-3 py-2">
+                <span className="text-sm text-gray-600">
+                  שלום, <span className="font-semibold text-gray-800">{getUserDisplayName()}</span>
+                </span>
+              </div>
+              <Button
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+                variant="ghost"
+                className="w-full justify-start rounded-lg py-3 text-base text-red-600 hover:bg-red-50 transition-all duration-300"
+              >
+                <span>התנתק</span>
               </Button>
             </div>
           )}
@@ -3125,33 +3176,41 @@ function EnhancedCampaign() {
         </div>
       </header>
 
-      <div className="container max-w-4xl mx-auto px-4 pt-24 pb-6 md:py-8">
-        {/* Toast Message */}
+      <div className="container max-w-4xl mx-auto px-3 md:px-6 pt-20 md:pt-24 pb-6 md:py-8">
+        {/* Toast Message - Mobile Responsive with Auto-hide */}
         {showToast && (
-          <div className={`fixed top-20 z-50 ${isRTL ? 'right-4' : 'left-4'} max-w-sm animate-in slide-in-from-top-5 duration-300`}>
-            <div className="bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-xl p-4">
+          <div className={`fixed top-16 sm:top-20 md:top-24 left-1/2 transform -translate-x-1/2 z-[60] w-[90%] sm:w-auto max-w-sm transition-all duration-300 ease-in-out ${
+            showToast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+          }`}>
+            <div className="bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-xl sm:rounded-2xl shadow-2xl p-3 sm:p-4">
               <div className={`flex items-start ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center shadow-md">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center shadow-md flex-shrink-0">
                   <CheckCircle className="h-4 w-4 text-white" />
                 </div>
-                <div className="flex-1">
-                  <p className={`text-sm text-gray-800 leading-relaxed ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs sm:text-sm text-gray-800 leading-relaxed ${isRTL ? 'text-right' : 'text-left'} break-words`} dir={isRTL ? 'rtl' : 'ltr'}>
                     {toastMessage}
                   </p>
                 </div>
+                <button
+                  onClick={() => setShowToast(false)}
+                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Platform Management Page */}
+        {/* Platform Management Page - Mobile Responsive */}
         {currentPage === 'platforms' && (
-          <div className="space-y-6 md:space-y-8 pt-24">
-            <div className="text-center">
-              <h1 className={`text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+          <div className="space-y-4 sm:space-y-6 md:space-y-8 pt-4 sm:pt-6 md:pt-8">
+            <div className="text-center px-2">
+              <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 md:mb-4 ${isRTL ? 'text-right' : 'text-left'}`}>
                 {t.platformsTitle}
               </h1>
-              <p className={`text-gray-600 text-sm md:text-base ${isRTL ? 'text-right' : 'text-left'}`}>
+              <p className={`text-gray-600 text-xs sm:text-sm md:text-base ${isRTL ? 'text-right' : 'text-left'}`}>
                 {language === 'he' ? 
                   'חבר את הפלטפורמות שלך כדי לשלוח פרסומות אוטומטית באמת (כולל פייסבוק עם אינסטגרם, גוגל עם יוטיוב וטיקטוק!)' :
                   'Connect your platforms to send advertisements automatically for real (including Facebook with Instagram, Google with YouTube and TikTok!)'
@@ -3159,28 +3218,28 @@ function EnhancedCampaign() {
               </p>
             </div>
 
-            {/* Overview Card */}
-            <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-200/50 shadow-lg rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Shield className="h-6 w-6 text-white" />
+            {/* Overview Card - Mobile Responsive */}
+            <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-200/50 shadow-lg rounded-xl md:rounded-2xl overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3 sm:space-x-4' : 'space-x-3 sm:space-x-4'}`}>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
                     <div className={isRTL ? 'text-right' : 'text-left'}>
-                      <h3 className="font-bold text-blue-900 text-lg">
+                      <h3 className="font-bold text-blue-900 text-base sm:text-lg">
                         {language === 'he' ? 'פלטפורמות מחוברות' : 'Connected Platforms'}
                       </h3>
-                      <p className="text-sm text-blue-700">
+                      <p className="text-xs sm:text-sm text-blue-700">
                         {Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length} / {availablePlatforms?.length || 0} {language === 'he' ? 'מחוברות' : 'connected'}
                       </p>
                     </div>
                   </div>
-                  <div className={`${isRTL ? 'text-left' : 'text-right'} flex flex-col items-end`}>
-                    <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <div className={`${isRTL ? 'text-left' : 'text-right'} flex flex-col items-center sm:items-end`}>
+                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                       {Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length}
                     </div>
-                    <div className="text-sm text-blue-600 font-medium">
+                    <div className="text-xs sm:text-sm text-blue-600 font-medium">
                       {language === 'he' ? 'פעילות' : 'Active'}
                     </div>
                   </div>
@@ -3188,14 +3247,14 @@ function EnhancedCampaign() {
               </CardContent>
             </Card>
 
-            {/* Available Platforms */}
-            <div className="space-y-4">
-              <h2 className={`text-xl font-bold text-gray-800 flex items-center ${isRTL ? 'space-x-reverse space-x-2 text-right' : 'space-x-2 text-left'}`}>
-                <Sparkles className="h-5 w-5 text-purple-600" />
+            {/* Available Platforms - Mobile Responsive */}
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className={`text-lg sm:text-xl font-bold text-gray-800 flex items-center ${isRTL ? 'space-x-reverse space-x-2 text-right' : 'space-x-2 text-left'} px-2`}>
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 <span>{language === 'he' ? 'פלטפורמות זמינות' : 'Available Platforms'}</span>
               </h2>
               
-              <div className="grid gap-4 md:gap-6">
+              <div className="grid gap-3 sm:gap-4 md:gap-6">
                 {availablePlatforms.map((platform) => {
                   const connectionStatus = connectedPlatforms?.[platform.name];
                   const isConnected = connectionStatus?.status === 'connected';
@@ -3205,42 +3264,42 @@ function EnhancedCampaign() {
                   return (
                     <Card 
                       key={platform.name}
-                      className={`transition-all duration-500 rounded-2xl overflow-hidden ${
-                        isConnected ? 'border-green-300/50 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg transform hover:scale-[1.02]' : 
+                      className={`transition-all duration-500 rounded-xl md:rounded-2xl overflow-hidden ${
+                        isConnected ? 'border-green-300/50 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg transform hover:scale-[1.01] sm:hover:scale-[1.02]' : 
                         hasError ? 'border-red-300/50 bg-gradient-to-br from-red-50 to-pink-50 shadow-md' :
-                        'hover:bg-gradient-to-br hover:from-gray-50 hover:to-blue-50 hover:shadow-xl hover:transform hover:scale-[1.02] border-gray-200/50'
+                        'hover:bg-gradient-to-br hover:from-gray-50 hover:to-blue-50 hover:shadow-xl hover:transform hover:scale-[1.01] sm:hover:scale-[1.02] border-gray-200/50'
                       }`}
                     >
-                      <CardContent className="p-6">
-                        <div className={`flex items-start ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
-                          {/* Platform Icon */}
-                          <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center text-white ${platform.color} shadow-xl transform transition-transform duration-300 hover:scale-110`}>
-                            <platform.icon className="h-8 w-8" />
+                      <CardContent className="p-4 sm:p-5 md:p-6">
+                        <div className={`flex items-start ${isRTL ? 'space-x-reverse space-x-3 sm:space-x-4' : 'space-x-3 sm:space-x-4'}`}>
+                          {/* Platform Icon - Mobile Responsive */}
+                          <div className={`relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center text-white ${platform.color} shadow-xl transform transition-transform duration-300 hover:scale-105 sm:hover:scale-110 flex-shrink-0`}>
+                            <platform.icon className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />
                             {platform.isRealConnection && (
-                              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                                <Sparkles className="h-3 w-3 text-white" />
+                              <div className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                                <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                               </div>
                             )}
                             {isConnected && (
-                              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-                                <Check className="h-3 w-3 text-white" />
+                              <div className="absolute -bottom-0.5 sm:-bottom-1 -right-0.5 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                                <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                               </div>
                             )}
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            {/* Header */}
-                            <div className="flex items-start justify-between mb-3">
-                              <div className={isRTL ? 'text-right' : 'text-left'}>
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <h3 className="text-xl font-bold text-gray-800">{platform.name}</h3>
+                            {/* Header - Mobile Responsive */}
+                            <div className="flex flex-col sm:flex-row items-start justify-between mb-2 sm:mb-3 gap-2">
+                              <div className={`${isRTL ? 'text-right' : 'text-left'} flex-1 min-w-0`}>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-1">
+                                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 break-words">{platform.name}</h3>
                                   {platform.isRealConnection && (
-                                    <span className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold border border-green-200">
+                                    <span className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold border border-green-200 whitespace-nowrap mt-1 sm:mt-0 inline-block w-fit">
                                       חיבור אמיתי
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-gray-600 text-sm leading-relaxed">{platform.description}</p>
+                                <p className="text-gray-600 text-xs sm:text-sm leading-relaxed break-words">{platform.description}</p>
                               </div>
                               
                               {/* Status Badge */}
@@ -3379,13 +3438,13 @@ function EnhancedCampaign() {
         {/* Campaign Creation Page */}
         {currentPage === 'campaign' && (
           <>
-            {/* Progress Header */}
-            <div className="mb-6 md:mb-8 pt-24">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className={`text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent ${isRTL ? 'text-right' : 'text-left'}`}>
+            {/* Progress Header - Mobile Optimized */}
+            <div className="mb-4 sm:mb-6 md:mb-8 pt-20 sm:pt-24">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <h1 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent ${isRTL ? 'text-right' : 'text-left'}`}>
                   {t.title}
                 </h1>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   {/* Preview Mode Toggle */}
                   <Button
                     onClick={() => {
@@ -3410,52 +3469,53 @@ function EnhancedCampaign() {
                     }}
                     variant={previewMode ? "default" : "outline"}
                     size="sm"
-                    className={`${previewMode ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'border-yellow-600 text-yellow-600'}`}
+                    className={`text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 h-8 sm:h-9 ${previewMode ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'border-yellow-600 text-yellow-600'}`}
                   >
-                    <Eye className="h-4 w-4 mr-1" />
-                    {previewMode ? 'תצוגה מקדימה' : 'תצוגה מקדימה'}
+                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    <span className="hidden sm:inline">{previewMode ? 'תצוגה מקדימה' : 'תצוגה מקדימה'}</span>
+                    <span className="sm:hidden">תצוגה</span>
                   </Button>
                   
-                <div className="flex items-center space-x-2 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2 shadow-sm border border-gray-200/50">
-                  <div className="text-sm text-gray-600 font-medium">שלב</div>
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">
+                <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl px-2.5 sm:px-4 py-1.5 sm:py-2 shadow-sm border border-gray-200/50">
+                  <div className="text-xs sm:text-sm text-gray-600 font-medium">שלב</div>
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-md sm:rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md">
                     {currentStep}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">מתוך 4</div>
+                  <div className="text-xs sm:text-sm text-gray-600 font-medium">מתוך 4</div>
                   </div>
                 </div>
               </div>
               
               {/* Preview Mode Notice */}
               {previewMode && (
-                <div className="mb-4 bg-yellow-50 border-2 border-yellow-300 rounded-xl p-3 flex items-center gap-3">
-                  <Eye className="h-5 w-5 text-yellow-600 flex-shrink-0" />
-                  <p className="text-sm text-yellow-800 font-medium">
-                    <strong>מצב תצוגה מקדימה:</strong> ניתן לנווט חופשי בין השלבים. לחץ על מספר השלב או השתמש בכפתורים.
+                <div className="mb-3 sm:mb-4 bg-yellow-50 border-2 border-yellow-300 rounded-xl p-2.5 sm:p-3 flex items-start gap-2 sm:gap-3">
+                  <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs sm:text-sm text-yellow-800 font-medium">
+                    <strong>מצב תצוגה מקדימה:</strong> ניתן לנווט חופשי בין השלבים.
                   </p>
                 </div>
               )}
               
-              {/* Modern Progress Bar */}
-              <div className="mb-8">
-                <div className="relative mb-2">
-                  <div className="h-4 bg-gray-200/60 rounded-full overflow-hidden shadow-inner">
+              {/* Modern Progress Bar - Mobile Optimized */}
+              <div className="mb-4 sm:mb-6 md:mb-8">
+                <div className="relative mb-1.5 sm:mb-2">
+                  <div className="h-2.5 sm:h-3 md:h-4 bg-gray-200/60 rounded-full overflow-hidden shadow-inner">
                     <div 
                       className="h-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full transition-all duration-700 shadow-sm" 
                       style={{width: `${progressPercentage}%`}}
                     ></div>
                   </div>
-                  <div className={`text-xs text-gray-600 mt-2 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                  <div className={`text-[10px] sm:text-xs text-gray-600 mt-1 sm:mt-1.5 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
                     {Math.round(progressPercentage)}% הושלם
                   </div>
                 </div>
               
-                {/* Steps Indicator */}
-                <div className={`grid grid-cols-2 md:flex md:items-center md:justify-between gap-4 md:gap-2 mt-6 ${isRTL ? 'md:space-x-reverse' : ''}`}>
+                {/* Steps Indicator - Mobile Optimized */}
+                <div className={`flex items-center justify-between gap-2 sm:gap-3 md:gap-4 mt-3 sm:mt-4 md:mt-6 ${isRTL ? 'md:space-x-reverse' : ''}`}>
                   {steps.map((step, index) => (
                     <div 
                       key={step.number} 
-                      className="flex items-center justify-center"
+                      className="flex-1 flex items-center justify-center"
                       onClick={() => {
                         if (previewMode) {
                           setCurrentStep(step.number);
@@ -3463,22 +3523,25 @@ function EnhancedCampaign() {
                         }
                       }}
                     >
-                      <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2 md:space-x-3' : 'space-x-2 md:space-x-3'} ${
+                      <div className={`flex flex-col items-center gap-1 ${
                         currentStep >= step.number ? 'text-blue-600' : 'text-gray-400'
                       } ${previewMode ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}>
-                        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-500 ${
                           currentStep >= step.number 
-                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-110' 
+                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
                             : 'bg-gray-200 text-gray-400'
                         } ${previewMode ? 'hover:shadow-xl' : ''}`}>
                           {currentStep > step.number ? (
-                            <CheckCircle className="h-5 w-5 md:h-6 md:w-6" />
+                            <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
                           ) : (
-                            <step.icon className="h-5 w-5 md:h-6 md:w-6" />
+                            <step.icon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
                           )}
                         </div>
+                        {/* Mobile step number - always visible */}
+                        <span className="text-[10px] sm:text-xs font-medium lg:hidden">{step.number}</span>
+                        {/* Desktop step title */}
                         <div className="hidden lg:block min-w-0">
-                          <div className={`font-semibold text-sm whitespace-nowrap ${isRTL ? 'text-right' : 'text-left'}`}>{step.title}</div>
+                          <div className={`font-semibold text-xs whitespace-nowrap ${isRTL ? 'text-right' : 'text-left'}`}>{step.title}</div>
                         </div>
                       </div>
                     </div>
@@ -3487,27 +3550,27 @@ function EnhancedCampaign() {
               </div>
             </div>
 
-            {/* Main Content Card */}
-            <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 border-b border-gray-100">
-                <CardTitle className="text-xl md:text-2xl text-center text-gray-800 flex items-center justify-center space-x-2">
+            {/* Main Content Card - Mobile Responsive */}
+            <Card className="shadow-xl md:shadow-2xl border-0 bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 border-b border-gray-100 p-4 md:p-6">
+                <CardTitle className="text-lg sm:text-xl md:text-2xl text-center text-gray-800 flex items-center justify-center space-x-2">
                   <span>{steps[currentStep - 1].title}</span>
-                  {currentStep === 3 && <Brain className="h-6 w-6 text-purple-600" />}
+                  {currentStep === 3 && <Brain className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />}
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="p-6 md:p-8">
-                {/* Step 1: Video Upload */}
+              <CardContent className="p-4 sm:p-5 md:p-6 lg:p-8">
+                {/* Step 1: Video Upload - Mobile Responsive */}
                 {currentStep === 1 && (
-                  <div className="space-y-6 md:space-y-8">
+                  <div className="space-y-4 sm:space-y-6 md:space-y-8">
                     {/* Video Upload Section */}
-                    <div className="space-y-4">
-                      <Label className={`text-lg font-bold text-gray-800 flex items-center ${isRTL ? 'space-x-reverse space-x-2 text-right' : 'space-x-2 text-left'}`}>
-                        <Upload className="h-5 w-5 text-blue-600" />
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label className={`text-sm sm:text-base md:text-lg font-bold text-gray-800 flex items-center gap-1.5 sm:gap-2 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <Upload className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
                         <span>העלאת סרטון לניתוח AI</span>
                       </Label>
                       
-                      <div className="border-2 border-dashed border-blue-300 rounded-2xl p-6 md:p-8 text-center hover:border-blue-400 transition-all duration-300 bg-gradient-to-br from-blue-50/50 to-purple-50/50">
+                      <div className="border-2 border-dashed border-blue-300 rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 text-center hover:border-blue-400 active:border-blue-500 transition-all duration-300 bg-gradient-to-br from-blue-50/50 to-purple-50/50">
                         <input
                           type="file"
                           accept="video/*"
@@ -3517,24 +3580,24 @@ function EnhancedCampaign() {
                         />
                         <label htmlFor="video-upload" className="cursor-pointer block">
                           {formData.video ? (
-                            <div className="space-y-3 animate-in fade-in duration-500">
-                              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-                                <CheckCircle className="h-8 w-8 text-white" />
+                            <div className="space-y-1.5 sm:space-y-2 animate-in fade-in duration-500">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                                <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
                               </div>
-                              <p className="text-green-600 font-bold text-lg">{formData.video.name}</p>
-                              <p className="text-sm text-gray-600">סרטון מוכן לניתוח AI מתקדם</p>
-                              <p className="text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-full inline-block">לחץ כדי להחליף סרטון</p>
+                              <p className="text-green-600 font-bold text-xs sm:text-sm md:text-base break-words px-2">{formData.video.name}</p>
+                              <p className="text-[10px] sm:text-xs text-gray-600">סרטון מוכן לניתוח AI</p>
+                              <p className="text-[9px] sm:text-[10px] text-blue-600 bg-blue-50 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full inline-block">לחץ להחלפה</p>
                             </div>
                           ) : (
-                            <div className="space-y-3">
-                              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-                                <Upload className="h-8 w-8 text-white" />
+                            <div className="space-y-1.5 sm:space-y-2">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                                <Upload className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
                               </div>
-                              <p className="text-blue-600 font-bold text-lg">לחץ כדי להעלות סרטון</p>
-                              <p className="text-sm text-gray-600">MP4, MOV, AVI עד 4GB (ידחוס אוטומטית לניתוח AI)</p>
-                              <p className={`text-xs text-purple-600 bg-purple-50 px-3 py-2 rounded-full inline-flex items-center ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}>
-                                <Brain className="h-4 w-4" />
-                                <span>יעבור ניתוח AI מתקדם</span>
+                              <p className="text-blue-600 font-bold text-xs sm:text-sm md:text-base">לחץ להעלאת סרטון</p>
+                              <p className="text-[10px] sm:text-xs text-gray-600 px-2">MP4, MOV, AVI עד 4GB</p>
+                              <p className={`text-[9px] sm:text-[10px] text-purple-600 bg-purple-50 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full inline-flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <Brain className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                <span>ניתוח AI</span>
                               </p>
                             </div>
                           )}
@@ -3543,75 +3606,75 @@ function EnhancedCampaign() {
                     </div>
 
 
-                    <Separator className="my-6" />
+                    <Separator className="my-4 sm:my-6" />
 
-                    {/* Business Description */}
-                    <div className="space-y-4">
-                      <Label htmlFor="business" className={`text-lg font-bold text-gray-800 flex items-center ${isRTL ? 'space-x-reverse space-x-2 text-right' : 'space-x-2 text-left'}`}>
-                        <TrendingUp className="h-5 w-5 text-purple-600" />
-                        <span>תיאור העסק</span>
+                    {/* Business Description - Mobile Optimized */}
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="business" className={`text-sm sm:text-base md:text-lg font-bold text-gray-800 flex items-center gap-1.5 sm:gap-2 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 flex-shrink-0" />
+                        <span>{t('businessDescription')}</span>
                       </Label>
                       <Textarea
                         id="business"
-                        placeholder="ספר לנו על העסק שלך - מה אתה מוכר, למי, מה מייחד אותך מהמתחרים..."
+                        placeholder="ספר לנו על העסק שלך..."
                         value={formData?.businessDescription || ""}
                         onChange={(e) => setFormData(prev => ({ ...prev, businessDescription: e.target.value }))}
-                        className={`min-h-32 rounded-2xl border-gray-200 focus:border-purple-400 focus:ring-purple-400 bg-white/50 backdrop-blur-sm ${isRTL ? 'text-right' : 'text-left'}`}
+                        className={`min-h-24 sm:min-h-28 md:min-h-32 rounded-lg sm:rounded-xl md:rounded-2xl border-gray-200 focus:border-purple-400 focus:ring-purple-400 bg-white/50 backdrop-blur-sm text-xs sm:text-sm md:text-base ${isRTL ? 'text-right' : 'text-left'}`}
                         dir={isRTL ? 'rtl' : 'ltr'}
                       />
-                      <p className={`text-sm text-gray-500 flex items-center bg-purple-50 px-3 py-2 rounded-xl ${isRTL ? 'space-x-reverse space-x-1 text-right' : 'space-x-1 text-left'}`}>
-                        <Brain className="h-4 w-4 text-purple-500" />
-                        <span>תיאור מפורט יותר = המלצות AI מדויקות יותר</span>
+                      <p className={`text-[10px] sm:text-xs text-gray-500 flex items-start gap-1 sm:gap-1.5 bg-purple-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <Brain className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-purple-500 flex-shrink-0 mt-0.5" />
+                        <span>תיאור מפורט = המלצות מדויקות</span>
                       </p>
                     </div>
 
-                    {/* Budget */}
-                    <div className="space-y-4">
-                      <Label htmlFor="budget" className={`text-lg font-bold text-gray-800 flex items-center ${isRTL ? 'space-x-reverse space-x-2 text-right' : 'space-x-2 text-left'}`}>
-                        <DollarSign className="h-5 w-5 text-green-600" />
-                        <span>תקציב יומי (₪)</span>
+                    {/* Budget - Mobile Optimized */}
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="budget" className={`text-sm sm:text-base md:text-lg font-bold text-gray-800 flex items-center gap-1.5 sm:gap-2 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
+                        <span>{t('dailyBudget')}</span>
                       </Label>
                       <div className="relative">
-                        <DollarSign className={`absolute top-3 h-4 w-4 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                        <DollarSign className={`absolute top-2 sm:top-2.5 md:top-3 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 ${isRTL ? 'right-2.5 sm:right-3' : 'left-2.5 sm:left-3'}`} />
                         <Input
                           id="budget"
                           type="number"
                           placeholder="200"
                           value={formData?.dailyBudget || ""}
                           onChange={(e) => setFormData(prev => ({ ...prev, dailyBudget: e.target.value }))}
-                          className={`rounded-2xl border-gray-200 focus:border-green-400 focus:ring-green-400 bg-white/50 backdrop-blur-sm ${isRTL ? 'pr-10 text-right' : 'pl-10 text-left'}`}
+                          className={`rounded-lg sm:rounded-xl md:rounded-2xl border-gray-200 focus:border-green-400 focus:ring-green-400 bg-white/50 backdrop-blur-sm text-xs sm:text-sm md:text-base h-9 sm:h-10 md:h-11 ${isRTL ? 'pr-8 sm:pr-9 md:pr-10 text-right' : 'pl-8 sm:pl-9 md:pl-10 text-left'}`}
                           dir={isRTL ? 'rtl' : 'ltr'}
                         />
                       </div>
-                      <p className={`text-sm text-gray-500 flex items-center bg-green-50 px-3 py-2 rounded-xl ${isRTL ? 'space-x-reverse space-x-1 text-right' : 'space-x-1 text-left'}`}>
-                        <Zap className="h-4 w-4 text-green-500" />
-                        <span>AI יחלק את התקציב באופן מיטבי בין הפלטפורמות (כולל פייסבוק, אינסטגרם, גוגל עם יוטיוב וטיקטוק!)</span>
+                      <p className={`text-[10px] sm:text-xs text-gray-500 flex items-start gap-1 sm:gap-1.5 bg-green-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <span>AI יחלק את התקציב באופן מיטבי</span>
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* Step 2: Campaign Goal */}
+                {/* Step 2: Campaign Goal - Mobile Responsive */}
                 {currentStep === 2 && (
-                  <div className="space-y-6 md:space-y-8">
+                  <div className="space-y-4 sm:space-y-6 md:space-y-8">
                     {isAnalyzing ? (
-                      <div className="text-center py-12">
-                        <div className="mb-6">
+                      <div className="text-center py-6 sm:py-8 md:py-12">
+                        <div className="mb-4 sm:mb-6">
                           <div className="relative">
-                            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl animate-pulse">
-                              <Brain className="h-10 w-10 text-white animate-spin" />
+                            <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-2xl animate-pulse">
+                              <Brain className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 text-white animate-spin" />
                             </div>
                             {/* Rotating ring around the brain */}
-                            <div className="absolute inset-0 w-20 h-20 mx-auto border-4 border-transparent border-t-blue-300 rounded-full animate-spin"></div>
+                            <div className="absolute inset-0 w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 mx-auto border-4 border-transparent border-t-blue-300 rounded-full animate-spin"></div>
                           </div>
-                          <h3 className="text-2xl font-bold text-gray-800 mb-2">AI מנתח את הסרטון...</h3>
-                          <p className="text-gray-600 mb-4 text-lg font-medium">{currentAnalysisStep}</p>
+                          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2 px-2">AI מנתח את הסרטון...</h3>
+                          <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base md:text-lg font-medium px-2">{currentAnalysisStep}</p>
                         </div>
                           
-                          {/* Enhanced Progress Bar */}
-                          <div className="max-w-lg mx-auto mb-6">
+                          {/* Enhanced Progress Bar - Mobile Responsive */}
+                          <div className="max-w-lg mx-auto mb-4 sm:mb-6 px-4">
                             <div className="relative">
-                              <div className="h-6 bg-gray-200/60 rounded-full overflow-hidden shadow-inner">
+                              <div className="h-5 sm:h-6 bg-gray-200/60 rounded-full overflow-hidden shadow-inner">
                                 <div 
                                   className="h-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full transition-all duration-1000 ease-out relative overflow-hidden" 
                                   style={{width: `${analysisProgress}%`}}
@@ -3625,7 +3688,7 @@ function EnhancedCampaign() {
                               
                               {/* Progress percentage */}
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-sm font-bold text-white drop-shadow-lg">
+                                <span className="text-xs sm:text-sm font-bold text-black drop-shadow-lg">
                                   {Math.round(analysisProgress)}%
                                 </span>
                               </div>
@@ -3633,25 +3696,25 @@ function EnhancedCampaign() {
                             
                             {/* Time remaining */}
                             {estimatedTimeRemaining > 0 && (
-                              <div className="mt-3 flex items-center justify-center space-x-2">
-                                <Clock className="h-4 w-4 text-gray-500" />
-                                <span className="text-sm text-gray-600 font-medium">
+                              <div className="mt-2 sm:mt-3 flex items-center justify-center space-x-2">
+                                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
+                                <span className="text-xs sm:text-sm text-gray-600 font-medium">
                                   זמן משוער: {estimatedTimeRemaining} שניות
                                 </span>
                               </div>
                             )}
                           </div>
                           
-                          {/* Fun facts while waiting */}
-                          <div className="max-w-md mx-auto">
-                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200 relative overflow-hidden">
+                          {/* Fun facts while waiting - Mobile Responsive */}
+                          <div className="max-w-md mx-auto px-4">
+                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-200 relative overflow-hidden">
                               {/* Background animation */}
                               <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 to-purple-100/20 animate-pulse"></div>
                               
                               <div className="relative z-10">
                                 <div className="flex items-center justify-center space-x-2 mb-2">
-                                  <Sparkles className="h-5 w-5 text-yellow-500 animate-bounce" />
-                                  <span className="text-sm font-medium text-gray-700">
+                                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 animate-bounce" />
+                                  <span className="text-xs sm:text-sm font-medium text-gray-700 text-center">
                                     {analysisProgress < 5 && "🚀 המערכת שלנו מתחילה ניתוח מתקדם עבורך..."}
                                     {analysisProgress >= 5 && analysisProgress < 15 && "📤 המערכת שולחת את הסרטון לניתוח מתקדם..."}
                                     {analysisProgress >= 15 && analysisProgress < 35 && "🎬 המערכת מנתחת את הסרטון שלך..."}
@@ -3662,7 +3725,7 @@ function EnhancedCampaign() {
                                     {analysisProgress >= 100 && "🎉 הניתוח הושלם בהצלחה! המערכת עבדה קשה עבורך!"}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-600 text-center">
+                                <p className="text-[10px] sm:text-xs text-gray-600 text-center leading-relaxed">
                                   {analysisProgress < 5 && "המערכת שלנו מתחילה לעבוד קשה עבורך..."}
                                   {analysisProgress >= 5 && analysisProgress < 15 && "המערכת שולחת את הסרטון שלך לניתוח מתקדם..."}
                                   {analysisProgress >= 15 && analysisProgress < 35 && "המערכת מנתחת את הסרטון שלך..."}
@@ -3680,35 +3743,37 @@ function EnhancedCampaign() {
                       </div>
                     ) : (
                       <>
-                        <div className="text-center mb-8">
-                          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                            <Target className="h-8 w-8 text-white" />
+                        <div className="text-center mb-6 sm:mb-8">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg">
+                            <Target className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
                           </div>
-                          <p className={`text-gray-600 text-lg ${isRTL ? 'text-right' : 'text-left'}`}>בחר את המטרה העיקרית של הקמפיין</p>
+                          <p className={`text-gray-600 text-sm sm:text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} px-2`}>בחר את המטרה העיקרית של הקמפיין</p>
                       
                       {formData.video && (
-                        <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-200">
-                          <p className={`text-sm text-blue-700 flex items-center justify-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-                            <Brain className="h-4 w-4" />
+                        <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl md:rounded-2xl border border-blue-200">
+                          <p className={`text-xs sm:text-sm text-blue-700 flex items-center justify-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
+                            <Brain className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                             <span>AI ינתח את הסרטון בהתאם למטרה שתבחר</span>
                           </p>
                         </div>
                       )}
                       
-                      {/* Platforms Status */}
-                      <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200">
-                        <p className={`text-sm text-gray-700 flex items-center justify-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-                          <Link className="h-4 w-4" />
-                          <span>
-                            {Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length > 0 ? 
-                              `${Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length} פלטפורמות מחוברות ומוכנות` :
-                              'עדיין לא חיברת פלטפורמות'
-                            }
+                      {/* Platforms Status - Mobile Responsive */}
+                      <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl md:rounded-2xl border border-gray-200">
+                        <p className={`text-xs sm:text-sm text-gray-700 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-0 ${isRTL ? 'sm:space-x-reverse sm:space-x-2' : 'sm:space-x-2'}`}>
+                          <span className="flex items-center gap-2">
+                            <Link className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                            <span>
+                              {Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length > 0 ? 
+                                `${Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length} פלטפורמות מחוברות ומוכנות` :
+                                'עדיין לא חיברת פלטפורמות'
+                              }
+                            </span>
                           </span>
                           <Button
                             onClick={() => setCurrentPage('platforms')}
                             variant="link"
-                            className="text-blue-600 underline p-0 h-auto font-bold"
+                            className="text-blue-600 underline p-0 h-auto font-bold text-xs sm:text-sm"
                           >
                             {Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length > 0 ? 
                               'נהל חיבורים' : 'חבר עכשיו'
@@ -3718,32 +3783,32 @@ function EnhancedCampaign() {
                       </div>
                     </div>
                     
-                    {/* Goal Selection */}
-                    <div className="grid gap-4 md:gap-6">
+                    {/* Goal Selection - Mobile Responsive */}
+                    <div className="grid gap-3 sm:gap-4 md:gap-6">
                       {campaignGoals.map((goal) => (
                         <Card 
                           key={goal.value}
-                          className={`cursor-pointer transition-all duration-500 hover:shadow-xl rounded-2xl overflow-hidden transform hover:scale-[1.02] ${
+                          className={`cursor-pointer transition-all duration-500 hover:shadow-xl rounded-xl md:rounded-2xl overflow-hidden transform hover:scale-[1.01] sm:hover:scale-[1.02] ${
                             formData?.campaignGoal === goal.value 
                               ? 'ring-2 ring-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg' 
                               : 'hover:bg-gradient-to-br hover:from-gray-50 hover:to-blue-50 border-gray-200'
                           }`}
                           onClick={() => setFormData(prev => ({ ...prev, campaignGoal: goal.value }))}
                         >
-                          <CardContent className={`p-6 flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
-                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 ${
+                          <CardContent className={`p-4 sm:p-5 md:p-6 flex items-center ${isRTL ? 'space-x-reverse space-x-3 sm:space-x-4' : 'space-x-3 sm:space-x-4'}`}>
+                            <div className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 flex-shrink-0 ${
                               formData?.campaignGoal === goal.value 
-                                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white transform scale-110' 
+                                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white transform scale-105 sm:scale-110' 
                                 : 'bg-gray-100 text-gray-500'
                             }`}>
-                              <goal.icon className="h-8 w-8" />
+                              <goal.icon className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />
                             </div>
-                            <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                              <h3 className="font-bold text-xl text-gray-800 mb-2">{goal.label}</h3>
-                              <p className="text-gray-600 leading-relaxed">{goal.description}</p>
+                            <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
+                              <h3 className="font-bold text-base sm:text-lg md:text-xl text-gray-800 mb-1 sm:mb-2 break-words">{goal.label}</h3>
+                              <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed break-words">{goal.description}</p>
                             </div>
                             {formData?.campaignGoal === goal.value && (
-                              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
                                 <CheckCircle className="h-5 w-5 text-white" />
                               </div>
                             )}
@@ -3756,25 +3821,25 @@ function EnhancedCampaign() {
                   </div>
                 )}
 
-                {/* Step 3: AI Analysis & Recommendations */}
+                {/* Step 3: AI Analysis & Recommendations - Mobile Responsive */}
                 {currentStep === 3 && (
-                  <div className="space-y-6 md:space-y-8">
+                  <div className="space-y-4 sm:space-y-6 md:space-y-8">
                     {!isAnalyzing && (
                       <>
-                        {/* Analysis Header */}
-                        <div className="text-center mb-8">
-                          <div className="flex items-center justify-center space-x-3 mb-4">
-                            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                              <Brain className="h-8 w-8 text-white" />
+                        {/* Analysis Header - Mobile Responsive */}
+                        <div className="text-center mb-6 sm:mb-8 px-2">
+                          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg">
+                              <Brain className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
                             </div>
-                            <Sparkles className="h-8 w-8 text-yellow-500 animate-pulse" />
+                            <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-yellow-500 animate-pulse" />
                           </div>
-                          <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2">
                             {aiAnalysisComplete ? "המלצות AI מתקדמות לסרטון שלך" : "המלצות בסיסיות"}
                           </h3>
-                          <p className="text-gray-600 text-lg">
+                          <p className="text-gray-600 text-sm sm:text-base md:text-lg">
                             {aiAnalysisComplete 
-                              ? "המלצות מותאמות אישית על בסיס ניתוח מתקדם של התוכן" 
+                              ? "המלצות מותאמות אישית על בסיס ניתוח מתקדם" 
                               : "המלצות כלליות על בסיס המטרה שלך"}
                           </p>
                         </div>
@@ -3784,21 +3849,21 @@ function EnhancedCampaign() {
                           console.log("🔍 Debug - aiAnalysisComplete:", aiAnalysisComplete, "brainResponse:", brainResponse);
                           return aiAnalysisComplete && brainResponse;
                         })() && (
-                          <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-200 mb-6 rounded-2xl shadow-lg">
-                            <CardContent className="p-6">
-                              <div className="flex items-start space-x-3 mb-4">
-                                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                  <Brain className="h-6 w-6 text-white" />
+                          <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-200 mb-4 sm:mb-6 rounded-xl md:rounded-2xl shadow-lg">
+                            <CardContent className="p-4 sm:p-5 md:p-6">
+                              <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                                  <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                                 </div>
-                                <div className="text-right flex-1">
-                                  <h4 className="font-bold text-blue-900 mb-3 text-xl flex items-center space-x-2">
-                                    <Sparkles className="h-6 w-6 text-yellow-500" />
+                                <div className="text-right flex-1 min-w-0">
+                                  <h4 className="font-bold text-blue-900 mb-2 sm:mb-3 text-base sm:text-lg md:text-xl flex items-center gap-2">
+                                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 flex-shrink-0" />
                                     <span>סיכום ניתוח AI מתקדם</span>
                                   </h4>
                                   
                                   {brainResponse.analysis_summary && (
-                                    <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl mb-4 border border-white/50">
-                                      <div className="text-sm text-blue-700 leading-relaxed space-y-3" dir="rtl">
+                                    <div className="bg-white/70 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl mb-3 sm:mb-4 border border-white/50">
+                                      <div className="text-xs sm:text-sm text-blue-700 leading-relaxed space-y-2 sm:space-y-3" dir="rtl">
                                         {brainResponse.analysis_summary.split('\n').map((line, index) => {
                                           if (line.startsWith('# ')) {
                                             return (
@@ -3834,23 +3899,23 @@ function EnhancedCampaign() {
                                   )}
 
                                   {brainResponse.visual_analysis && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
-                                        <h5 className="font-bold text-blue-800 mb-2 flex items-center space-x-2">
-                                          <Camera className="h-5 w-5" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                                      <div className="bg-white/70 backdrop-blur-sm p-3 sm:p-4 rounded-lg sm:rounded-xl border border-white/50">
+                                        <h5 className="font-bold text-blue-800 mb-1.5 sm:mb-2 flex items-center gap-2 text-sm sm:text-base">
+                                          <Camera className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                                           <span>ניתוח ויזואלי</span>
                                         </h5>
-                                        <p className="text-sm text-blue-600">
+                                        <p className="text-xs sm:text-sm text-blue-600">
                                           {brainResponse.visual_analysis.frames_analyzed || 1} פריימים נותחו
                                         </p>
                                       </div>
                                       
-                                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
-                                        <h5 className="font-bold text-blue-800 mb-2 flex items-center space-x-2">
-                                          <Volume2 className="h-5 w-5" />
+                                      <div className="bg-white/70 backdrop-blur-sm p-3 sm:p-4 rounded-lg sm:rounded-xl border border-white/50">
+                                        <h5 className="font-bold text-blue-800 mb-1.5 sm:mb-2 flex items-center gap-2 text-sm sm:text-base">
+                                          <Volume2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                                           <span>ניתוח אודיו</span>
                                         </h5>
-                                        <p className="text-sm text-blue-600">
+                                        <p className="text-xs sm:text-sm text-blue-600">
                                           תמלול וניתוח טון הושלמו
                                         </p>
                                       </div>
@@ -3862,40 +3927,40 @@ function EnhancedCampaign() {
                           </Card>
                         )}
 
-                        {/* Platform Recommendations */}
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className={`text-xl font-bold text-gray-800 ${isRTL ? 'text-right' : 'text-left'}`}>פלטפורמות מומלצות:</h4>
-                            <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'} text-sm font-medium ${
+                        {/* Platform Recommendations - Mobile Responsive */}
+                        <div className="space-y-3 sm:space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <h4 className={`text-base sm:text-lg md:text-xl font-bold text-gray-800 ${isRTL ? 'text-right' : 'text-left'}`}>פלטפורמות מומלצות:</h4>
+                            <div className={`flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium ${
                               aiAnalysisComplete ? 'text-green-600' : 'text-gray-500'
-                            }`}>
+                            } ${isRTL ? 'justify-end' : 'justify-start'}`}>
                               {aiAnalysisComplete ? (
                                 <>
-                                  <Sparkles className="h-4 w-4" />
+                                  <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                                   <span>המלצות AI מותאמות אישית</span>
                                 </>
                               ) : (
                                 <>
-                                  <Target className="h-4 w-4" />
+                                  <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                                   <span>המלצות בסיסיות</span>
                                 </>
                               )}
                             </div>
                           </div>
                           
-                          <div className="grid gap-4">
+                          <div className="grid gap-3 sm:gap-4">
                             {recommendations?.platforms?.map((platform) => (
                               <Card 
                                 key={platform?.name || Math.random()}
-                                className={`transition-all duration-500 rounded-2xl overflow-hidden ${
+                                className={`transition-all duration-500 rounded-xl md:rounded-2xl overflow-hidden ${
                                   platform?.recommended 
                                     ? (aiAnalysisComplete ? 'border-green-300/50 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg' : 'border-green-200/50 bg-green-50 shadow-md') 
                                     : 'border-red-200/50 bg-gradient-to-br from-red-50 to-pink-50 shadow-md'
                                 }`}
                               >
-                                <CardContent className="p-4">
-                                  <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
-                                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
+                                <CardContent className="p-3 sm:p-4">
+                                  <div className={`flex flex-col sm:flex-row items-start ${isRTL ? 'sm:space-x-reverse sm:space-x-4' : 'sm:space-x-4'} gap-3 sm:gap-0`}>
+                                    <div className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 ${
                                       platform?.recommended 
                                         ? (aiAnalysisComplete ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white' : 'bg-green-500 text-white')
                                         : 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
@@ -3903,22 +3968,22 @@ function EnhancedCampaign() {
                                       {(() => {
                                         try {
                                           const IconComponent = platform?.icon || Target;
-                                          return React.createElement(IconComponent, { className: "h-8 w-8" });
+                                          return React.createElement(IconComponent, { className: "h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" });
                                         } catch (error) {
-                                          return <Target className="h-8 w-8" />;
+                                          return <Target className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />;
                                         }
                                       })()}
                                     </div>
-                                    <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                                      <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-bold text-gray-800 text-lg">{platform?.name || 'Unknown Platform'}</h4>
-                                        <div className={`text-sm font-bold ${platform?.recommended ? 'text-green-600' : 'text-red-600'}`}>
+                                    <div className={`flex-1 min-w-0 w-full ${isRTL ? 'text-right' : 'text-left'}`}>
+                                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                                        <h4 className="font-bold text-gray-800 text-base sm:text-lg break-words">{platform?.name || 'Unknown Platform'}</h4>
+                                        <div className={`text-xs sm:text-sm font-bold ${platform?.recommended ? 'text-green-600' : 'text-red-600'} flex-shrink-0`}>
                                           {platform?.recommended ? (
-                                            <span className={`flex items-center bg-green-100 px-3 py-1 rounded-full ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}>
+                                            <span className={`flex items-center bg-green-100 px-2 sm:px-3 py-1 rounded-full gap-1 text-[10px] sm:text-xs`}>
                                               {aiAnalysisComplete ? (
                                                 <>
-                                                  <Sparkles className="h-3 w-3" />
-                                                  <span>מומלץ על ידי AI</span>
+                                                  <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
+                                                  <span className="whitespace-nowrap">מומלץ על ידי AI</span>
                                                 </>
                                               ) : (
                                                 <span>✅ מומלץ</span>
@@ -3926,17 +3991,17 @@ function EnhancedCampaign() {
                                               <span className="font-bold">({platform?.percentage || '0%'})</span>
                                             </span>
                                           ) : (
-                                            <span className="bg-red-100 px-3 py-1 rounded-full">❌ לא מומלץ</span>
+                                            <span className="bg-red-100 px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs">❌ לא מומלץ</span>
                                           )}
                                         </div>
                                       </div>
-                                      <p className={`text-sm text-gray-600 mb-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                                      <p className={`text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 break-words ${isRTL ? 'text-right' : 'text-left'}`}>
                                         {platform?.reason || 'ללא נימוק'}
                                       </p>
                                       {platform?.recommended && aiAnalysisComplete && (
-                                        <div className={`text-xs text-gray-500 space-y-1 bg-white/50 p-3 rounded-xl ${isRTL ? 'text-right' : 'text-left'}`}>
-                                          <p><strong>קהל יעד:</strong> {platform?.targetAudience || 'כללי'}</p>
-                                          <p><strong>זמני פרסום:</strong> {platform?.timing || 'כל היום'}</p>
+                                        <div className={`text-[10px] sm:text-xs text-gray-500 space-y-1 bg-white/50 p-2 sm:p-3 rounded-lg sm:rounded-xl ${isRTL ? 'text-right' : 'text-left'}`}>
+                                          <p className="break-words"><strong>קהל יעד:</strong> {platform?.targetAudience || 'כללי'}</p>
+                                          <p className="break-words"><strong>זמני פרסום:</strong> {platform?.timing || 'כל היום'}</p>
                                         </div>
                                       )}
                                     </div>
@@ -3944,9 +4009,9 @@ function EnhancedCampaign() {
                                 </CardContent>
                               </Card>
                             )) || (
-                              <Card className="bg-gray-50 rounded-2xl">
-                                <CardContent className="p-6">
-                                  <p className="text-gray-600 text-center">לא נמצאו המלצות פלטפורמות</p>
+                              <Card className="bg-gray-50 rounded-xl md:rounded-2xl">
+                                <CardContent className="p-4 sm:p-6">
+                                  <p className="text-gray-600 text-center text-sm sm:text-base">לא נמצאו המלצות פלטפורמות</p>
                                 </CardContent>
                               </Card>
                             )}
@@ -4523,7 +4588,7 @@ function EnhancedCampaign() {
                               <div className="space-y-3">
                                 <Button
                                   onClick={handleAutomaticDeployment}
-                                  disabled={isDeploying || Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length === 0}
+                                  disabled={isDeploying || (!DEBUG_MODE && Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length === 0)}
                                   className={`w-full bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 hover:from-green-700 hover:via-blue-700 hover:to-purple-700 text-xl px-12 py-4 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center font-bold ${isRTL ? 'flex-row-reverse' : ''}`}
                                 >
                                   {isDeploying ? (
@@ -4553,7 +4618,7 @@ function EnhancedCampaign() {
                       </CardContent>
                     </Card>
                           
-                    {Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length === 0 && (
+                    {!DEBUG_MODE && Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length === 0 && (
                       <div className={`text-red-600 text-sm mt-4 ${isRTL ? 'text-right' : 'text-left'} bg-red-50 px-4 py-3 rounded-xl border border-red-200`}>
                         <div className="flex items-center justify-center space-x-2">
                           <AlertTriangle className="h-4 w-4" />
@@ -4566,6 +4631,16 @@ function EnhancedCampaign() {
                         >
                           חבר פלטפורמות עכשיו
                         </Button>
+                      </div>
+                    )}
+                    
+                    {/* 🔧 הודעת מצב בדיקה */}
+                    {DEBUG_MODE && Object.values(connectedPlatforms || {}).filter(p => p?.status === 'connected').length === 0 && (
+                      <div className={`text-blue-600 text-sm mt-4 ${isRTL ? 'text-right' : 'text-left'} bg-blue-50 px-4 py-3 rounded-xl border border-blue-200`}>
+                        <div className="flex items-center justify-center space-x-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>🔧 מצב בדיקה: ניתן לשלוח קמפיין ללא חיבור פלטפורמות (הקמפיין יישמר במערכת אך לא יפורסם בפועל)</span>
+                        </div>
                       </div>
                     )}
 
@@ -4629,14 +4704,14 @@ function EnhancedCampaign() {
                   </div>
                 )}
 
-                {/* Navigation Buttons */}
-                <div className={`flex ${currentStep === 4 ? 'justify-start' : 'justify-between'} pt-8 border-t border-gray-200`}>
+                {/* Navigation Buttons - Mobile Responsive */}
+                <div className={`flex flex-col sm:flex-row gap-3 sm:gap-0 ${currentStep === 4 ? 'sm:justify-start' : 'sm:justify-between'} pt-6 sm:pt-8 border-t border-gray-200`}>
                   <Button 
                     variant="outline" 
                     onClick={handlePrev}
                     disabled={currentStep === 1}
-                    className={`flex items-center rounded-2xl border-2 hover:bg-gray-50 transition-all duration-300 ${isRTL ? 'flex-row-reverse' : ''} ${
-                      currentStep === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'
+                    className={`flex items-center justify-center rounded-xl md:rounded-2xl border-2 hover:bg-gray-50 transition-all duration-300 py-2.5 sm:py-3 text-sm sm:text-base ${isRTL ? 'flex-row-reverse' : ''} ${
+                      currentStep === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-[1.02] sm:hover:scale-105'
                     }`}
                   >
                     <ArrowLeft className={`h-4 w-4 ${isRTL ? 'mr-2' : 'ml-2'} ${isRTL ? 'rotate-180' : ''}`} />
@@ -4647,10 +4722,10 @@ function EnhancedCampaign() {
                     <Button 
                       onClick={handleNext}
                       disabled={isAnalyzing}
-                      className={`bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 flex items-center rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-bold ${isRTL ? 'flex-row-reverse' : ''} disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
+                      className={`w-full sm:w-auto bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 flex items-center justify-center rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] sm:hover:scale-105 transition-all duration-300 font-bold py-2.5 sm:py-3 text-sm sm:text-base ${isRTL ? 'flex-row-reverse' : ''} disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
                     >
                       {isAnalyzing ? "מנתח..." : "הבא"}
-                      <ArrowRight className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'} ${isRTL ? 'rotate-180' : ''}`} />
+                      <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 ${isRTL ? 'ml-2' : 'mr-2'} ${isRTL ? 'rotate-180' : ''}`} />
                     </Button>
                   )}
                 </div>

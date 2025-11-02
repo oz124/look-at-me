@@ -5,6 +5,16 @@ const { ValidationService, SecurityLogger } = require('../../src/lib/security');
 const formidable = require('formidable').formidable;
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
+const Campaign = require('../../models/Campaign');
+
+// Connect to MongoDB if not already connected
+async function connectToMongo() {
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to MongoDB');
+  }
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,6 +24,9 @@ module.exports = async function handler(req, res) {
   console.log("📥 Received POST request to /api/campaigns/create");
 
   try {
+    // Connect to MongoDB
+    await connectToMongo();
+
     // Parse form data to handle both JSON and file uploads
     const form = formidable({
       maxFileSize: 500 * 1024 * 1024, // 500MB
@@ -49,17 +62,36 @@ module.exports = async function handler(req, res) {
     const campaignParams = fields.campaignParams ? JSON.parse(fields.campaignParams[0]) : null;
     const adCreative = fields.adCreative ? JSON.parse(fields.adCreative[0]) : null;
     const accessToken = fields.accessToken ? fields.accessToken[0] : null;
+    const userId = fields.userId ? fields.userId[0] : null;
+    const debugMode = fields.debugMode ? fields.debugMode[0] === 'true' : false;
     
     // Get video file if uploaded
     const videoFile = files.video ? files.video[0] : null;
 
-    // Validate input
-    if (!platform || !campaignParams || !accessToken) {
+    // 🔧 DEBUG MODE - דילוג על בדיקת access token
+    if (!debugMode && (!platform || !campaignParams || !accessToken)) {
       return res.status(400).json({ 
         success: false, 
         error: 'Missing required parameters: platform, campaignParams, accessToken' 
       });
     }
+    
+    if (!platform || !campaignParams) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required parameters: platform, campaignParams' 
+      });
+    }
+
+    // Validate Firebase userId
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'User authentication required (Firebase UID missing)' 
+      });
+    }
+
+    console.log('✅ Firebase User ID:', userId);
 
     // Validate platform
     const allowedPlatforms = ['Facebook', 'Google', 'TikTok'];
@@ -75,23 +107,96 @@ module.exports = async function handler(req, res) {
     const sanitizedAccessToken = ValidationService.sanitizeInput(accessToken);
 
     console.log(`🚀 Creating ${sanitizedPlatform} campaign...`);
+    if (debugMode) {
+      console.log('🔧 DEBUG MODE: Campaign will be saved to database but not published to platform');
+    }
 
     let result;
-    switch (sanitizedPlatform) {
-      case 'Facebook':
-        result = await createFacebookCampaign(campaignParams, adCreative, sanitizedAccessToken, videoFile);
-        break;
-      case 'Google':
-        result = await createGoogleCampaign(campaignParams, adCreative, sanitizedAccessToken, videoFile);
-        break;
-      case 'TikTok':
-        result = await createTikTokCampaign(campaignParams, adCreative, sanitizedAccessToken, videoFile);
-        break;
-      default:
-        throw new Error(`Platform ${sanitizedPlatform} not supported`);
+    
+    // 🔧 DEBUG MODE - יצירת קמפיין סימולציה
+    if (debugMode) {
+      result = {
+        success: true,
+        platform: sanitizedPlatform,
+        campaign_id: `DEBUG_CAMPAIGN_${Date.now()}`,
+        adset_id: `DEBUG_ADSET_${Date.now()}`,
+        ad_id: `DEBUG_AD_${Date.now()}`,
+        creative_id: `DEBUG_CREATIVE_${Date.now()}`,
+        video_id: videoFile ? `DEBUG_VIDEO_${Date.now()}` : null,
+        estimated_reach: Math.floor(Math.random() * 50000) + 10000,
+        daily_budget: campaignParams.daily_budget || 100,
+        message: `🔧 DEBUG: ${sanitizedPlatform} campaign created (simulation mode - not published to real platform)`
+      };
+    } else {
+      // מצב רגיל - יצירה אמיתית
+      switch (sanitizedPlatform) {
+        case 'Facebook':
+          result = await createFacebookCampaign(campaignParams, adCreative, sanitizedAccessToken, videoFile);
+          break;
+        case 'Google':
+          result = await createGoogleCampaign(campaignParams, adCreative, sanitizedAccessToken, videoFile);
+          break;
+        case 'TikTok':
+          result = await createTikTokCampaign(campaignParams, adCreative, sanitizedAccessToken, videoFile);
+          break;
+        default:
+          throw new Error(`Platform ${sanitizedPlatform} not supported`);
+      }
     }
 
     console.log(`✅ ${sanitizedPlatform} campaign created successfully`);
+
+    // Save campaign to database
+    const campaignName = debugMode 
+      ? `🔧 [DEBUG] ${sanitizedPlatform} - ${new Date().toISOString().split('T')[0]}`
+      : campaignParams.name || `${sanitizedPlatform} Campaign - ${new Date().toISOString().split('T')[0]}`;
+    
+    const campaign = new Campaign({
+      userId: userId,
+      name: campaignName,
+      goal: campaignParams.goal || 'חשיפה',
+      targetAudience: campaignParams.target_audience || '',
+      budget: {
+        daily: campaignParams.daily_budget || 0,
+        total: campaignParams.total_budget,
+        currency: 'ILS'
+      },
+      status: debugMode ? 'debug' : (result.success ? 'active' : 'failed'),
+      platforms: [{
+        name: sanitizedPlatform,
+        campaignId: result.campaign_id,
+        adSetId: result.adset_id,
+        adGroupId: result.adgroup_id,
+        adId: result.ad_id,
+        creativeId: result.creative_id,
+        videoId: result.video_id,
+        status: result.success ? 'active' : 'failed',
+        deployedAt: new Date(),
+        error: result.error
+      }],
+      creative: {
+        headline: adCreative?.headline,
+        description: adCreative?.description,
+        websiteUrl: adCreative?.website_url,
+        callToAction: adCreative?.call_to_action,
+        videoFile: videoFile ? {
+          filename: videoFile.originalFilename,
+          size: videoFile.size,
+          format: videoFile.mimetype,
+          uploadedAt: new Date()
+        } : undefined
+      },
+      schedule: {
+        startDate: new Date(),
+        endDate: campaignParams.end_date ? new Date(campaignParams.end_date) : undefined,
+        timezone: 'Asia/Jerusalem'
+      },
+      deployedAt: new Date()
+    });
+
+    await campaign.save();
+    console.log(`💾 Campaign saved to database: ${campaign._id}`);
+    console.log(`👤 Campaign linked to Firebase User: ${userId}`);
 
     // Clean up temporary video file
     if (videoFile && videoFile.filepath) {
@@ -109,6 +214,7 @@ module.exports = async function handler(req, res) {
     res.status(200).json({
       success: true,
       message: `${sanitizedPlatform} campaign created successfully`,
+      campaignId: campaign._id,
       result: result,
       timestamp: new Date().toISOString()
     });
