@@ -13,7 +13,7 @@ FPS = 30
 
 # [source, in, out]; motion/out/final.mp4 holds the UI insert (0..3.8) and the end card (3.8..9.1)
 MO = ROOT / 'motion' / 'out' / 'final.mp4'
-EDIT = [(SH / 'S1.mp4', 0.5, 4.1), (SH / 'S2.mp4', 1.0, 6.0), (SH / 'S3.mp4', 4.0, 7.2), (SH / 'S4.mp4', 1.0, 4.2),
+EDIT = [(SH / 'S1.mp4', 0.5, 4.1), (SH / 'S2.mp4', 2.6, 7.6), (SH / 'S3.mp4', 4.0, 7.2), (SH / 'S4.mp4', 1.0, 4.2),
         (MO, 0.0, 3.8), (SH / 'S5.mp4', 1.0, 5.4), (MO, 3.8, 9.1)]
 VOICE = [0.3, 3.7, 8.9, 11.9, 19.3, 23.6]                     # start of voice/line-N.wav
 CAPS = [  # text, from, to, style
