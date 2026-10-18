@@ -1,6 +1,6 @@
 """Voice-over (Gemini TTS) and score (Lyria) for the story ad. The key comes from GEMINI_API_KEY only.
 
-  python audio_gen.py voice [VOICE]   -> voice/line-1.wav ... voice/line-6.wav
+  python audio_gen.py voice [VOICE] [N ...]   -> voice/line-1.wav ... voice/line-5.wav (only lines N when given)
   python audio_gen.py music           -> voice/music.* (whatever format Lyria returns)
 """
 import base64, json, os, sys, urllib.request, wave
@@ -13,8 +13,7 @@ OUT = Path(__file__).resolve().parent / 'voice'; OUT.mkdir(exist_ok=True)
 LINES = [
     ('יש לך את המאפים הכי טובים בשכונה.', 'warm and knowing, a small smile, confident, not sad'),
     ('רק שאף אחד עוד לא יודע.', 'light and a little wry, a playful hint of a problem, not sad'),
-    ('אז תצלמי סרטון אחד.', 'confident, a spark of an idea, encouraging'),
-    ('לוק אט מי יביא אותו לאנשים הנכונים.', 'energetic and sure, upbeat'),
+    ('אז צלמי סרטון של העסק והמוצר, ותתחילי לשווק עם לוק אט מי.', 'confident and encouraging, energy rising toward the brand name, stress "לוק אט מי"'),
     ('ועכשיו? כולם יודעים.', 'joyful and proud, a grin you can hear'),
     ('תנו לעולם לראות אתכם. לוק אט מי.', 'confident, warm and inviting, stress the brand name'),
 ]
@@ -33,7 +32,9 @@ def post(model, body):
 
 if sys.argv[1] == 'voice':
     voice = sys.argv[2] if len(sys.argv) > 2 else 'Kore'
+    only = [int(n) for n in sys.argv[3:]]
     for i, (line, mood) in enumerate(LINES, 1):
+        if only and i not in only: continue
         r = post('gemini-2.5-pro-preview-tts', {
             'contents': [{'parts': [{'text': f'Say in Hebrew, as a female voice-over in a persuasive, upbeat modern ad, natural Israeli accent, '
                                              f'{mood}. Read exactly this and nothing else:\n{line}'}]}],

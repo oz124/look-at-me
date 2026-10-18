@@ -13,18 +13,18 @@ FPS = 30
 
 # [source, in, out]; motion/out/final.mp4 holds the UI insert (0..3.8) and the end card (3.8..9.1)
 MO = ROOT / 'motion' / 'out' / 'final.mp4'
-EDIT = [(SH / 'S3.mp4', 3.0, 6.0), (SH / 'S1.mp4', 0.8, 3.9), (SH / 'S4.mp4', 2.0, 4.5),
+EDIT = [(SH / 'S3.mp4', 3.0, 6.0), (SH / 'S1.mp4', 0.8, 3.9), (SH / 'S4.mp4', 2.0, 5.44),
         (MO, 0.9, 3.8), (SH / 'S5.mp4', 0.5, 6.3), (MO, 4.0, 9.1)]   # the end card starts after the phone has left
-VOICE = [0.25, 3.1, 6.25, 9.5, 12.6, 17.6]                    # start of voice/line-N.wav
-TURN = 9.36                                                  # the "send" click in the UI insert: the score opens up here
+VOICE = [0.25, 3.1, 6.2, 13.54, 18.54]                       # start of voice/line-N.wav
+TURN = 10.3                                                  # the "send" click in the UI insert, right as the brand name is said
 MUSIC_IN = 11.747 - TURN                                     # puts a measured downbeat of voice/music.mp3 on TURN
 CAPS = [  # text, from, to, style
     ('יש לך את המאפים הכי טובים בשכונה.', 0.37, 3.0, 'low'),
     ('רק שאף אחד עוד לא יודע.', 3.22, 6.1, 'low'),
-    ('אז תצלמי סרטון אחד.', 6.34, 8.6, 'low'),
-    ('LOOK AT ME יביא אותו לאנשים הנכונים.', 9.74, 12.5, 'up'),   # above the phone in the UI insert
-    ('ועכשיו? כולם יודעים.', 12.65, 17.3, 'big'),
-    ('תנו לעולם לראות אתכם.', 17.79, 99, 'top'),
+    ('אז צלמי סרטון של העסק והמוצר,', 6.3, 8.5, 'low'),
+    ('ותתחילי לשווק עם LOOK AT ME', 8.5, 10.6, 'up'),         # above the phone once the UI insert starts
+    ('ועכשיו? כולם יודעים.', 13.59, 18.24, 'big'),
+    ('תנו לעולם לראות אתכם.', 18.73, 99, 'top'),
 ]
 DUR = sum(b - a for _, a, b in EDIT)
 GRADE = {'S1.mp4': 'eq=brightness=-0.04:saturation=0.9,colorbalance=bs=0.06:bm=0.02',   # night: cooler and darker
