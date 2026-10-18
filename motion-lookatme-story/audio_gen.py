@@ -11,18 +11,17 @@ API = 'https://generativelanguage.googleapis.com/v1beta/models/'
 OUT = Path(__file__).resolve().parent / 'voice'; OUT.mkdir(exist_ok=True)
 
 LINES = [
-    ('פתחת עסק בשביל חלום.', 'soft and intimate, almost a whisper of empathy, slow'),
-    ('קמת כל בוקר בחמש. נתת הכל.', 'tender and proud of her, slow'),
-    ('אבל כשאף אחד לא רואה אותך...', 'quiet, a little heartbroken, trailing off'),
-    ('לוק אט מי הופך סרטון אחד לקמפיין, שמגיע לאנשים הנכונים.', 'warm, hopeful, clear and reassuring, medium pace'),
-    ('ופתאום, רואים אותך.', 'moved and joyful, a smile you can hear, emotional peak'),
+    ('יש לך את המאפים הכי טובים בשכונה.', 'warm and knowing, a small smile, confident, not sad'),
+    ('רק שאף אחד עוד לא יודע.', 'light and a little wry, a playful hint of a problem, not sad'),
+    ('אז תצלמי סרטון אחד.', 'confident, a spark of an idea, encouraging'),
+    ('לוק אט מי יביא אותו לאנשים הנכונים.', 'energetic and sure, upbeat'),
+    ('ועכשיו? כולם יודעים.', 'joyful and proud, a grin you can hear'),
     ('תנו לעולם לראות אתכם. לוק אט מי.', 'confident, warm and inviting, stress the brand name'),
 ]
-MUSIC = ('Emotional cinematic underscore for a 26 second vertical video ad about a small bakery owner. '
-         '0 to 11 seconds: soft solo felt piano, intimate and slightly melancholic, sparse notes. '
-         '11 to 15 seconds: the piano lifts, a warm cello enters, sense of hope. '
-         '15 to 21 seconds: warm strings, gentle pulsing percussion and piano swell into an uplifting, joyful resolution. '
-         '21 to 26 seconds: settle on a warm, sustained major chord and fade. Instrumental only, no vocals, 70 to 80 BPM.')
+MUSIC = ('Upbeat, confident, feel-good modern indie pop with a light house groove, 118 BPM, punchy kick, crisp claps, '
+         'warm electric piano chords, bouncy bass, bright plucks. Optimistic and stylish like a modern tech or lifestyle ad, '
+         'not cheesy, not cinematic, no orchestra, no slow intro: full groove from the first second, steady energy throughout. '
+         'Instrumental only, no vocals.')
 
 
 def post(model, body):
@@ -36,7 +35,7 @@ if sys.argv[1] == 'voice':
     voice = sys.argv[2] if len(sys.argv) > 2 else 'Kore'
     for i, (line, mood) in enumerate(LINES, 1):
         r = post('gemini-2.5-pro-preview-tts', {
-            'contents': [{'parts': [{'text': f'Say in Hebrew, as a female voice-over in an emotional, cinematic ad, natural Israeli accent, '
+            'contents': [{'parts': [{'text': f'Say in Hebrew, as a female voice-over in a persuasive, upbeat modern ad, natural Israeli accent, '
                                              f'{mood}. Read exactly this and nothing else:\n{line}'}]}],
             'generationConfig': {'responseModalities': ['AUDIO'],
                                  'speechConfig': {'voiceConfig': {'prebuiltVoiceConfig': {'voiceName': voice}}}}})

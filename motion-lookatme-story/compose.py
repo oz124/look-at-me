@@ -13,18 +13,18 @@ FPS = 30
 
 # [source, in, out]; motion/out/final.mp4 holds the UI insert (0..3.8) and the end card (3.8..9.1)
 MO = ROOT / 'motion' / 'out' / 'final.mp4'
-EDIT = [(SH / 'S1.mp4', 0.5, 4.1), (SH / 'S2.mp4', 2.6, 7.6), (SH / 'S3.mp4', 3.0, 6.2), (SH / 'S4.mp4', 2.0, 5.2),
-        (MO, 0.0, 3.8), (SH / 'S5.mp4', 0.5, 4.9), (MO, 4.0, 9.1)]   # the end card starts after the phone has left
-VOICE = [0.3, 3.7, 8.9, 11.9, 19.3, 23.6]                     # start of voice/line-N.wav
+EDIT = [(SH / 'S3.mp4', 3.0, 6.0), (SH / 'S1.mp4', 0.8, 3.9), (SH / 'S4.mp4', 2.0, 4.5),
+        (MO, 0.9, 3.8), (SH / 'S5.mp4', 0.5, 6.3), (MO, 4.0, 9.1)]   # the end card starts after the phone has left
+VOICE = [0.25, 3.1, 6.25, 9.5, 12.6, 17.6]                    # start of voice/line-N.wav
+TURN = 9.36                                                  # the "send" click in the UI insert: the score opens up here
+MUSIC_IN = 11.747 - TURN                                     # puts a measured downbeat of voice/music.mp3 on TURN
 CAPS = [  # text, from, to, style
-    ('פתחת עסק בשביל חלום.', 0.41, 3.3, 'low'),
-    ('קמת כל בוקר בחמש.', 3.93, 7.0, 'low'),
-    ('נתת הכל.', 7.17, 8.7, 'low'),
-    ('אבל כשאף אחד לא רואה אותך...', 9.01, 11.8, 'low'),
-    ('LOOK AT ME הופך סרטון אחד לקמפיין,', 12.21, 16.0, 'up'),
-    ('שמגיע לאנשים הנכונים.', 16.14, 18.8, 'up'),   # above the phone in the UI insert
-    ('ופתאום, רואים אותך.', 19.55, 23.2, 'big'),
-    ('תנו לעולם לראות אתכם.', 23.83, 99, 'top'),
+    ('יש לך את המאפים הכי טובים בשכונה.', 0.37, 3.0, 'low'),
+    ('רק שאף אחד עוד לא יודע.', 3.22, 6.1, 'low'),
+    ('אז תצלמי סרטון אחד.', 6.34, 8.6, 'low'),
+    ('LOOK AT ME יביא אותו לאנשים הנכונים.', 9.74, 12.5, 'up'),   # above the phone in the UI insert
+    ('ועכשיו? כולם יודעים.', 12.65, 17.3, 'big'),
+    ('תנו לעולם לראות אתכם.', 17.79, 99, 'top'),
 ]
 DUR = sum(b - a for _, a, b in EDIT)
 GRADE = {'S1.mp4': 'eq=brightness=-0.04:saturation=0.9,colorbalance=bs=0.06:bm=0.02',   # night: cooler and darker
@@ -76,9 +76,19 @@ def main():
     for i, t0 in enumerate(VOICE):
         fg.append(f'[{vi + i}:a]aresample=48000,adelay={int(t0 * 1000)}:all=1[l{i}]')
     fg.append(''.join(f'[l{i}]' for i in range(len(VOICE))) + f'amix=inputs={len(VOICE)}:normalize=0,apad,atrim=0:{DUR},asplit=2[vo][sc]')
-    fg.append(f'[{mi}:a]aresample=48000,atrim=0:{DUR},afade=t=out:st={DUR - 1.8}:d=1.8,volume=0.55[mu]')
+    # score: muffled and low until TURN, then the full groove (a filter-open drop on a downbeat)
+    fg.append(f'[{mi}:a]aresample=48000,atrim={MUSIC_IN}:{MUSIC_IN + DUR},asetpts=PTS-STARTPTS,asplit=2[m1][m2]')
+    fg.append(f"[m1]lowpass=f=450,lowpass=f=450,volume=0.5,volume='lt(t,{TURN})':eval=frame[mlo]")
+    fg.append(f"[m2]volume='gte(t,{TURN})':eval=frame[mhi]")
+    fg.append(f'[mlo][mhi]amix=inputs=2:normalize=0,afade=t=out:st={DUR - 1.5}:d=1.5,volume=0.5[mu]')
+    # room sound of the footage itself, quietly under everything
+    amb = [k for k, (src, a, b) in enumerate(EDIT) if src.parent == SH]
+    starts = [sum(e[2] - e[1] for e in EDIT[:k]) for k in range(len(EDIT))]
+    for k in amb:
+        fg.append(f'[{k}:a]aresample=48000,volume=0.35,adelay={int(starts[k] * 1000)}:all=1[a{k}]')
+    fg.append(''.join(f'[a{k}]' for k in amb) + f'amix=inputs={len(amb)}:normalize=0,apad,atrim=0:{DUR}[amb]')
     fg.append('[mu][sc]sidechaincompress=threshold=0.03:ratio=4:attack=20:release=400[duck]')
-    fg.append('[vo][duck]amix=inputs=2:normalize=0,loudnorm=I=-14:TP=-1:LRA=11[aout]')
+    fg.append('[vo][duck][amb]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1:LRA=11[aout]')
     cmd += ['-filter_complex', ';'.join(fg), '-map', f'[{last}]', '-map', '[aout]', '-r', str(FPS),
             '-c:v', 'libx264', '-crf', '17', '-preset', 'medium', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k',
             '-t', str(DUR), '-movflags', '+faststart', str(OUT / 'story.mp4')]
