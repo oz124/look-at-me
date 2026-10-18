@@ -174,7 +174,7 @@
       box(ck, 0, 0, 52, 52, { borderRadius: '50%', background: C.GREEN });
       icon(ck, P.check, 0, 0, 30, C.WHITE, 3);
       txt(g, s, Object.assign({ x: 790, y, size: 44, weight: 700, color: C.INK2, align: 'r', dir: /^[A-Za-z]/.test(s) ? 'ltr' : 'rtl' }, RUB));
-      box(g, 252, y, 20, 20, { borderRadius: '50%', background: C.GREEN });
+      g.dot = box(g, 252, y, 20, 20, { borderRadius: '50%', background: C.GREEN });
       txt(g, status, Object.assign({ x: 278, y, size: 36, weight: 500, color: C.GREEN, align: 'l' }, RUB));
       return { g, ck };
     });
@@ -270,7 +270,7 @@
       // 2: AI
       swap(c2, t, T_S2 + 0.1, T_S3);
       const kt = S(t - T_S2 - 0.2, 20, 0.62);
-      tf(tile, { s: kt * (1 + 0.04 * Math.sin(Math.max(0, t - T_S2) * 5) * Math.exp(-Math.max(0, t - T_S2 - 0.6))), o: t >= T_S2 + 0.2 ? 1 : 0 });
+      tf(tile, { s: kt * (1 + 0.04 * Math.sin(Math.max(0, t - T_S2) * 6)), r: 6 * Math.sin(Math.max(0, t - T_S2) * 2.2), o: t >= T_S2 + 0.2 ? 1 : 0 });
       rows2.forEach((r, i) => { const q = rise(t, R2[i], 40, 24, 0.8); tf(r.g, { y: q.y, o: q.o }); const kc = S(t - R2[i] - 0.15, 28, 0.6); tf(r.ck, { s: kc, o: t >= R2[i] + 0.15 ? 1 : 0 }); });
 
       // 3: platforms
@@ -283,7 +283,7 @@
       swap(c4, t, T_S4 + 0.1, T_CTA - 0.25);
       live.inner.textContent = String(R4.filter(x => t >= x).length);
       tf(live, { s: 1 + 0.15 * R4.reduce((a, x) => a + track(0, [[x, 1, 40, 1], [x + 0.08, 0, 18, 0.6]])(t), 0) });
-      rows4.forEach((r, i) => { const q = rise(t, R4[i], 40, 24, 0.8); tf(r.g, { y: q.y, o: q.o }); const kc = S(t - R4[i] - 0.12, 28, 0.6); tf(r.ck, { s: kc, o: t >= R4[i] + 0.12 ? 1 : 0 }); });
+      rows4.forEach((r, i) => { tf(r.g.dot, { s: 1 + 0.35 * Math.max(0, Math.sin((t - R4[i]) * 6 - i)) }); const q = rise(t, R4[i], 40, 24, 0.8); tf(r.g, { y: q.y, o: q.o }); const kc = S(t - R4[i] - 0.12, 28, 0.6); tf(r.ck, { s: kc, o: t >= R4[i] + 0.12 ? 1 : 0 }); });
 
       // call to action
       const kl = S(t - T_LOGO, 20, 0.62);
@@ -300,7 +300,20 @@
       tf(cur, { x: cx, y: cy, o: co, s: press(t, T_CLICK1, 0.86) * press(t, T_CLICK3, 0.86) * press(t, T_CLICK5, 0.86) });
 
       // camera: a slow push that never stops
-      tf(cam, { s: 1 + 0.03 * seg(t, T_LIGHT, DUR), y: -6 * Math.sin((t - T_LIGHT) * 0.5) });
+      tf(cam, { s: 1 + 0.03 * seg(t, T_LIGHT, 22) + 0.012 * Math.sin((t - T_LIGHT) * 1.3), y: -14 * Math.sin((t - T_LIGHT) * 0.9) });
     };
   });
+
+  // ---- time warp for the voice-over: the scenes are written on the original 22 s timeline ("old" time).
+  // Settled stretches are slowed so each narration line fits its scene; knots are [old, new] seconds.
+  const KN = [[0, 0], [2.85, 2.85], [3.05, 3.05], [4.7, 5.1], [5.3, 6.15], [6.8, 7.65], [7.7, 9.65], [7.8, 9.75],
+    [10.55, 12.5], [12.3, 14.25], [13.0, 15.65], [13.05, 15.7], [14.25, 17.3], [15.05, 18.4], [15.45, 19.7],
+    [16.7, 20.95], [17.85, 23.2], [20.2, 25.55], [22, DUR]];
+  const warp = (t, i, o) => {
+    for (let k = 1; k < KN.length; k++) if (t <= KN[k][i]) return lerp(KN[k - 1][o], KN[k][o], (t - KN[k - 1][i]) / (KN[k][i] - KN[k - 1][i]));
+    return KN[KN.length - 1][o];
+  };
+  const coreSeek = window.seek;
+  window.seek = t => coreSeek(warp(clamp(t, 0, DUR), 1, 0));
+  window.ready = window.ready.then(r => { window.SFX = window.SFX.map(([t, k, g]) => [+warp(t, 0, 1).toFixed(4), k, g]); return r; });
 })();
