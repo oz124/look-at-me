@@ -159,7 +159,7 @@
     const done1 = grp(c1b, 540, 1310);
     box(done1, 0, 0, 64, 64, { borderRadius: '50%', background: C.GREEN });
     icon(done1, P.check, 0, 0, 36, C.WHITE, 3);
-    const T_CLICK1 = 9.3, U0 = 9.4, U1 = 10.15, T_DONE1 = 10.25;
+    const T_CLICK1 = 9.45, U0 = 9.55, U1 = 10.2, T_DONE1 = 10.3;
     sfx(T_CLICK1, 'click', 0.8); sfx(T_DONE1, 'tick', 0.7);
 
     // content 2: the AI builds the strategy
@@ -233,7 +233,7 @@
     // ---- cursor (on top of everything in the world) ----
     const cur = cursor(w, 62, C.INK2, C.WHITE);
     const curP = track([820, 1760], [
-      [8.55, [560, 1180], 9, 0.95], [9.6, [800, 1760], 10, 1],
+      [8.7, [560, 1180], 9, 0.95], [9.75, [800, 1760], 10, 1],
       [14.3, [570, 1385], 9, 0.95], [15.2, [820, 1760], 10, 1],
       [18.85, [620, 1170], 9, 0.95]]);
 
@@ -296,7 +296,7 @@
 
       // cursor
       const [cx, cy] = curP(t);
-      const co = Math.max(vis(t, 8.5, 9.75), vis(t, 14.25, 15.3), vis(t, 18.8, 20.5));
+      const co = Math.max(vis(t, 8.65, 9.9), vis(t, 14.25, 15.3), vis(t, 18.8, 20.5));
       tf(cur, { x: cx, y: cy, o: co, s: press(t, T_CLICK1, 0.86) * press(t, T_CLICK3, 0.86) * press(t, T_CLICK5, 0.86) });
 
       // camera: a slow push that never stops
@@ -305,10 +305,10 @@
   });
 
   // ---- time warp for the voice-over: the scenes are written on the original 22 s timeline ("old" time).
-  // Settled stretches are slowed so each narration line fits its scene; knots are [old, new] seconds.
-  const KN = [[0, 0], [2.0, 2.0], [2.85, 3.2], [3.05, 3.4], [4.7, 5.9], [5.3, 6.85], [6.8, 8.35], [7.7, 10.35], [7.8, 10.45],
-    [10.55, 13.2], [12.3, 14.95], [13.0, 17.1], [13.05, 17.15], [14.25, 18.75], [15.05, 19.85], [15.45, 21.15],
-    [16.7, 22.4], [17.85, 24.95], [20.2, 27.3], [22, DUR]];
+  // Scenes are sped up or settled stretches slowed so each narration line (timing.json) fits its scene; knots are [old, new] seconds.
+  const KN = [[0, 0], [1.45, 1.45], [2.85, 2.8], [3.05, 3.0], [4.7, 4.8], [5.3, 5.65], [6.8, 7.15], [7.7, 8.25], [7.8, 8.35],
+    [10.55, 10.8], [12.3, 12.45], [13.0, 13.85], [13.05, 13.9], [14.25, 15.25], [15.05, 16.15], [15.45, 16.95],
+    [16.7, 18.2], [17.85, 19.95], [20.2, 22.3], [22, DUR]];
   const warp = (t, i, o) => {
     for (let k = 1; k < KN.length; k++) if (t <= KN[k][i]) return lerp(KN[k - 1][o], KN[k][o], (t - KN[k - 1][i]) / (KN[k][i] - KN[k - 1][i]));
     return KN[KN.length - 1][o];
