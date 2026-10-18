@@ -13,28 +13,28 @@ FPS = 30
 
 # [source, in, out]; motion/out/final.mp4 holds the UI insert (0..3.8) and the end card (3.8..9.1)
 MO = ROOT / 'motion' / 'out' / 'final.mp4'
-EDIT = [(SH / 'S1.mp4', 0.5, 4.1), (SH / 'S2.mp4', 2.6, 7.6), (SH / 'S3.mp4', 4.0, 7.2), (SH / 'S4.mp4', 1.0, 4.2),
-        (MO, 0.0, 3.8), (SH / 'S5.mp4', 1.0, 5.4), (MO, 3.8, 9.1)]
+EDIT = [(SH / 'S1.mp4', 0.5, 4.1), (SH / 'S2.mp4', 2.6, 7.6), (SH / 'S3.mp4', 3.0, 6.2), (SH / 'S4.mp4', 2.0, 5.2),
+        (MO, 0.0, 3.8), (SH / 'S5.mp4', 0.5, 4.9), (MO, 4.0, 9.1)]   # the end card starts after the phone has left
 VOICE = [0.3, 3.7, 8.9, 11.9, 19.3, 23.6]                     # start of voice/line-N.wav
 CAPS = [  # text, from, to, style
     ('פתחת עסק בשביל חלום.', 0.41, 3.3, 'low'),
     ('קמת כל בוקר בחמש.', 3.93, 7.0, 'low'),
     ('נתת הכל.', 7.17, 8.7, 'low'),
     ('אבל כשאף אחד לא רואה אותך...', 9.01, 11.8, 'low'),
-    ('LOOK AT ME הופך סרטון אחד לקמפיין,', 12.21, 16.0, 'low'),
-    ('שמגיע לאנשים הנכונים.', 16.14, 18.8, 'low'),
+    ('LOOK AT ME הופך סרטון אחד לקמפיין,', 12.21, 16.0, 'up'),
+    ('שמגיע לאנשים הנכונים.', 16.14, 18.8, 'up'),   # above the phone in the UI insert
     ('ופתאום, רואים אותך.', 19.55, 23.2, 'big'),
     ('תנו לעולם לראות אתכם.', 23.83, 99, 'top'),
 ]
 DUR = sum(b - a for _, a, b in EDIT)
-GRADE = {'S1.mp4': 'eq=brightness=-0.04:saturation=0.9,colorbalance=bs=0.06:ms=0.02',   # night: cooler and darker
+GRADE = {'S1.mp4': 'eq=brightness=-0.04:saturation=0.9,colorbalance=bs=0.06:bm=0.02',   # night: cooler and darker
          'S5.mp4': 'eq=saturation=1.08:brightness=0.01'}                                   # joy: a touch warmer and brighter
 
 CAP_HTML = '''<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="{fonts}/fonts.css"><style>
 html,body{{margin:0;background:transparent}} #c{{position:absolute;left:0;top:0;width:1080px;height:1920px}}
-.low,.big{{position:absolute;left:50%;transform:translateX(-50%);bottom:{bottom}px;direction:rtl;white-space:nowrap;
+.low,.big,.up{{position:absolute;left:50%;transform:translateX(-50%);bottom:{bottom}px;direction:rtl;white-space:nowrap;
   font-family:Rubik;font-weight:700;color:#fff;padding:18px 40px;border-radius:28px;background:rgba(15,13,31,.55)}}
-.low{{font-size:58px}} .big{{font-size:84px;font-family:'Noto Sans Hebrew';font-weight:900}}
+.low,.up{{font-size:58px}} .up{{bottom:auto;top:380px;font-size:50px}} .big{{font-size:84px;font-family:'Noto Sans Hebrew';font-weight:900}}
 .top{{position:absolute;left:50%;transform:translateX(-50%);top:330px;direction:rtl;white-space:nowrap;
   font-family:'Noto Sans Hebrew';font-weight:900;font-size:88px;color:#1E1B4B}}
 </style></head><body><div id="c"><div class="{style}">{text}</div></div></body></html>'''
