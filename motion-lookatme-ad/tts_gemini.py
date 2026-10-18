@@ -2,7 +2,7 @@
 
   GEMINI_API_KEY=... python tts_gemini.py [VOICE] [MODEL]     -> voice/line-1.wav ... voice/line-8.wav
 
-The key is read from the environment only. Default voice Charon (male); Kore for a female voice.
+The key is read from the environment only. Default voice Kore (female); Charon for a male voice.
 """
 import base64, json, os, sys, urllib.request, wave
 from pathlib import Path
@@ -15,18 +15,18 @@ LINES = [
     'אֵיי אַיי בונה לכם קהל, קריאייטיב ותקציב.',
     'ובקליק אחד, אתם בפייסבוק, גוגל וטיקטוק.',
     'מהסרטון, ועד קמפיין חי באוויר.',
-    'לוק אט מי. צרו חשבון ב לוק אט מי נקודה סייט.',
+    'לוק אט מי. נסו עכשיו, ב לוק אט מי נקודה סייט.',
 ]
-MOOD = ['dry and a little frustrated'] * 2 + ['optimistic and confident'] * 5 + ['friendly, with a smile, stress the brand name']
+MOOD = ['knowing and empathetic, as if she has seen this mistake a hundred times'] * 2 + ['persuasive, warm and confident, with energy that builds'] * 5 + ['inviting and sure, a smile in the voice, stress "נסו עכשיו" as a clear call to action']
 
 KEY = os.environ.get('GEMINI_API_KEY') or sys.exit('GEMINI_API_KEY is not set')
-VOICE = sys.argv[1] if len(sys.argv) > 1 else 'Charon'
+VOICE = sys.argv[1] if len(sys.argv) > 1 else 'Kore'
 MODEL = sys.argv[2] if len(sys.argv) > 2 else 'gemini-2.5-pro-preview-tts'
 OUT = Path(__file__).resolve().parent / 'voice'
 OUT.mkdir(exist_ok=True)
 
 for i, (line, mood) in enumerate(zip(LINES, MOOD), 1):
-    prompt = (f'Say in Hebrew, as a professional voice-over for a modern tech ad, natural Israeli accent, '
+    prompt = (f'Say in Hebrew, as a top female voice-over artist in a persuasive modern tech ad, natural Israeli accent, '
               f'medium pace, {mood}. Read exactly this and nothing else:\n{line}')
     body = {'contents': [{'parts': [{'text': prompt}]}],
             'generationConfig': {'responseModalities': ['AUDIO'],

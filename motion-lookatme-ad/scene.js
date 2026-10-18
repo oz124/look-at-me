@@ -224,8 +224,8 @@
     box(cta, 0, 24, 700, 150, { borderRadius: '48px', background: 'rgba(147,51,234,0.38)', filter: 'blur(34px)' });
     const ctaBox = box(cta, 0, 0, 760, 170, { borderRadius: '48px', background: GRAD_X, overflow: 'hidden' });
     const sheen = rect(ctaBox, 0, -40, 160, 250, { background: 'linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.55), rgba(255,255,255,0))' });
-    txt(cta, 'צור חשבון', Object.assign({ x: -30, y: 2, size: 72, weight: 700, color: C.WHITE }, RUB));
-    icon(cta, P.person, 175, 0, 60, C.WHITE, 2);
+    txt(cta, 'נסו עכשיו', Object.assign({ x: 30, y: 2, size: 72, weight: 700, color: C.WHITE }, RUB));
+    icon(cta, 'M19 12H5M11 6l-6 6 6 6', -165, 0, 60, C.WHITE, 2.4);   // forward in Hebrew points left
     const url = txt(w, 'lookatme.site', { x: 540, y: 1390, size: 92, font: F.LAT, weight: 700, color: C.PURPLE, dir: 'ltr' });
     const T_LOGO = 18.05, T_LET = 18.25, T_BTN = 18.75, T_CLICK5 = 19.5, T_URL = 19.8;
     sfx(T_LOGO, 'pop', 0.8); sfx(T_CLICK5, 'click', 0.9); sfx(T_CLICK5 + 0.05, 'sparkle', 0.5); sfx(T_URL, 'thud', 0.45);
@@ -306,9 +306,9 @@
 
   // ---- time warp for the voice-over: the scenes are written on the original 22 s timeline ("old" time).
   // Settled stretches are slowed so each narration line fits its scene; knots are [old, new] seconds.
-  const KN = [[0, 0], [2.85, 2.85], [3.05, 3.05], [4.7, 5.1], [5.3, 6.15], [6.8, 7.65], [7.7, 9.65], [7.8, 9.75],
-    [10.55, 12.5], [12.3, 14.25], [13.0, 15.65], [13.05, 15.7], [14.25, 17.3], [15.05, 18.4], [15.45, 19.7],
-    [16.7, 20.95], [17.85, 23.2], [20.2, 25.55], [22, DUR]];
+  const KN = [[0, 0], [2.0, 2.0], [2.85, 3.2], [3.05, 3.4], [4.7, 5.9], [5.3, 6.85], [6.8, 8.35], [7.7, 10.35], [7.8, 10.45],
+    [10.55, 13.2], [12.3, 14.95], [13.0, 17.1], [13.05, 17.15], [14.25, 18.75], [15.05, 19.85], [15.45, 21.15],
+    [16.7, 22.4], [17.85, 24.95], [20.2, 27.3], [22, DUR]];
   const warp = (t, i, o) => {
     for (let k = 1; k < KN.length; k++) if (t <= KN[k][i]) return lerp(KN[k - 1][o], KN[k][o], (t - KN[k - 1][i]) / (KN[k][i] - KN[k - 1][i]));
     return KN[KN.length - 1][o];
